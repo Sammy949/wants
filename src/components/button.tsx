@@ -35,10 +35,7 @@ const Button = ({ label, theme, onPress }: Props) => {
   } else {
     return (
       <View style={styles.buttonContainer}>
-        <Pressable
-          style={styles.button}
-          onPress={() => alert("button pressed :)")}
-        >
+        <Pressable style={styles.button} onPress={onPress}>
           <Text style={styles.buttonLabel}>{label}</Text>
         </Pressable>
       </View>
