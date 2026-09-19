@@ -17,7 +17,6 @@ export default function Index() {
     {
       !result.canceled
         ? (setSelectedImage(result.assets[0].uri), setShowAppOptions(true))
-        ? (setSelectedImage(result.assets[0].uri), setShowAppOptions(true))
         : alert("You did not select any image.");
     }
   };
@@ -25,8 +24,6 @@ export default function Index() {
   const [selectedImage, setSelectedImage] = useState<string | undefined>(
     undefined,
   );
-
-  const [showAppOptions, setShowAppOptions] = useState<boolean>(false);
 
   const [showAppOptions, setShowAppOptions] = useState<boolean>(false);
 
