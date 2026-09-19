@@ -8,7 +8,7 @@ import CircleButton from "@/components/circle-button";
 import EmojiPicker from "@/components/emoji-picker";
 import IconButton from "@/components/icon-button";
 
-const PlaceholderImage = require("@/assets/images/icon.png");
+const PlaceholderImage = require("@/assets/images/background-image.png");
 
 export default function Index() {
   const [selectedImage, setSelectedImage] = useState<string | undefined>(
