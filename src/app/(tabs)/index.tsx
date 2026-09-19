@@ -5,6 +5,7 @@ import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 import CircleButton from "@/components/circle-button";
+import EmojiPicker from "@/components/emoji-picker";
 import IconButton from "@/components/icon-button";
 
 const PlaceholderImage = require("@/assets/images/icon.png");
@@ -15,6 +16,7 @@ export default function Index() {
   );
 
   const [showAppOptions, setShowAppOptions] = useState<boolean>(false);
+  const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
 
   const pickImageAsync = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -35,10 +37,14 @@ export default function Index() {
   };
 
   const onAddSticker = () => {
-    //todo
+    setIsModalVisible(true);
   };
   const onSaveImageAsync = async () => {
     //todo
+  };
+
+  const onModalClose = () => {
+    setIsModalVisible(false);
   };
 
   return (
@@ -54,7 +60,7 @@ export default function Index() {
         <View style={styles.optionsContainer}>
           <View style={styles.optionsRow}>
             <IconButton icon="refresh" label="Reset" onPress={onReset} />
-            <CircleButton onPress={onSaveImageAsync} />
+            <CircleButton onPress={onAddSticker} />
             <IconButton
               icon="save-alt"
               label="Save"
@@ -75,6 +81,9 @@ export default function Index() {
           />
         </View>
       )}
+      <EmojiPicker isVisible={isModalVisible} onClose={onModalClose}>
+        {/* :) */}
+      </EmojiPicker>
     </View>
   );
 }
