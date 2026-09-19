@@ -4,9 +4,18 @@ import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 
+import CircleButton from "@/components/circle-button";
+import IconButton from "@/components/icon-button";
+
 const PlaceholderImage = require("@/assets/images/icon.png");
 
 export default function Index() {
+  const [selectedImage, setSelectedImage] = useState<string | undefined>(
+    undefined,
+  );
+
+  const [showAppOptions, setShowAppOptions] = useState<boolean>(false);
+
   const pickImageAsync = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
@@ -21,11 +30,16 @@ export default function Index() {
     }
   };
 
-  const [selectedImage, setSelectedImage] = useState<string | undefined>(
-    undefined,
-  );
+  const onReset = () => {
+    setShowAppOptions(false);
+  };
 
-  const [showAppOptions, setShowAppOptions] = useState<boolean>(false);
+  const onAddSticker = () => {
+    //todo
+  };
+  const onSaveImageAsync = async () => {
+    //todo
+  };
 
   return (
     <View style={styles.container}>
@@ -37,7 +51,17 @@ export default function Index() {
       </View>
 
       {showAppOptions ? (
-        <View />
+        <View style={styles.optionsContainer}>
+          <View style={styles.optionsRow}>
+            <IconButton icon="refresh" label="Reset" onPress={onReset} />
+            <CircleButton onPress={onSaveImageAsync} />
+            <IconButton
+              icon="save-alt"
+              label="Save"
+              onPress={onSaveImageAsync}
+            />
+          </View>
+        </View>
       ) : (
         <View style={styles.footerContainer}>
           <Button
@@ -67,5 +91,13 @@ const styles = StyleSheet.create({
   footerContainer: {
     flex: 1 / 3,
     alignItems: "center",
+  },
+  optionsContainer: {
+    position: "absolute",
+    bottom: 80,
+  },
+  optionsRow: {
+    alignItems: "center",
+    flexDirection: "row",
   },
 });
