@@ -7,6 +7,7 @@ import { ImageSourcePropType, StyleSheet, View } from "react-native";
 import CircleButton from "@/components/circle-button";
 import EmojiList from "@/components/emoji-list";
 import EmojiPicker from "@/components/emoji-picker";
+import EmojiSticker from "@/components/emoji-sticker";
 import IconButton from "@/components/icon-button";
 
 const PlaceholderImage = require("@/assets/images/background-image.png");
@@ -21,6 +22,7 @@ export default function Index() {
   const [pickedEmoji, setPickedEmoji] = useState<
     ImageSourcePropType | undefined
   >(undefined);
+
   const pickImageAsync = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
@@ -57,6 +59,9 @@ export default function Index() {
           imgSource={PlaceholderImage}
           selectedImage={selectedImage}
         />
+        {pickedEmoji && (
+          <EmojiSticker imageSize={40} stickerSource={pickedEmoji} />
+        )}
       </View>
 
       {showAppOptions ? (
