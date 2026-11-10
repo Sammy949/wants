@@ -2,7 +2,6 @@ import { router } from "expo-router";
 import { PlusIcon } from "phosphor-react-native/src/icons/Plus";
 import { useState } from "react";
 import { FlatList, Pressable, StyleSheet, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "@/components/button";
 import { EmptyState } from "@/components/empty-state";
 import { EmptyWantsArt } from "@/components/illustrations";
@@ -11,7 +10,6 @@ import { TagCard } from "@/components/tag-card";
 import { Text } from "@/components/text";
 import { useLiveQuery } from "@/data/provider";
 import type { WantKind } from "@/data/wants";
-import { useTheme } from "@/theme/theme";
 import { gutter, space } from "@/theme/tokens";
 
 const FILTERS: { key: WantKind | "all"; label: string }[] = [
@@ -22,8 +20,6 @@ const FILTERS: { key: WantKind | "all"; label: string }[] = [
 ];
 
 export default function WantsScreen() {
-  const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
   const [filter, setFilter] = useState<WantKind | "all">("all");
   const wants = useLiveQuery("wanting", (repo) => repo.listWanting());
   const stats = useLiveQuery("stats", (repo) => repo.stats());
@@ -85,7 +81,8 @@ export default function WantsScreen() {
             keyExtractor={(w) => String(w.id)}
             renderItem={({ item }) => <TagCard want={item} onPress={() => router.push(`/want/${item.id}`)} />}
             ItemSeparatorComponent={() => <View style={{ height: space.md }} />}
-            contentContainerStyle={[styles.list, { paddingBottom: 96 }]}
+            style={styles.listView}
+            contentContainerStyle={styles.list}
             ListEmptyComponent={
               loaded ? (
                 <Text variant="body" color="muted" style={styles.filterEmpty}>
@@ -94,10 +91,9 @@ export default function WantsScreen() {
               ) : undefined
             }
           />
-          <View style={[styles.fab, { right: Math.max(gutter, insets.right) }]}>
-            <View style={[styles.fabShadow, { shadowColor: colors.ink }]}>
-              <Button label="New want" icon={PlusIcon} onPress={() => router.push("/want/new")} />
-            </View>
+          {/* Full-width and pinned above the tab bar: the main action, always in thumb reach. */}
+          <View style={styles.action}>
+            <Button label="New want" icon={PlusIcon} block onPress={() => router.push("/want/new")} />
           </View>
         </>
       )}
@@ -119,15 +115,8 @@ const styles = StyleSheet.create({
   filters: { flexDirection: "row", gap: space.xl, paddingHorizontal: gutter, marginBottom: space.md },
   filter: { minHeight: 32, justifyContent: "center" },
   filterText: { fontSize: 15 },
-  list: { paddingHorizontal: gutter },
+  listView: { flex: 1 },
+  list: { paddingHorizontal: gutter, paddingBottom: space.lg },
   filterEmpty: { paddingTop: space.xl },
-  fab: { position: "absolute", bottom: space.lg },
-  // Tight, directional, ink-tinted: just enough to lift the button off the list.
-  fabShadow: {
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.18,
-    shadowRadius: 4,
-    elevation: 3,
-    borderRadius: 14,
-  },
+  action: { paddingHorizontal: gutter, paddingTop: space.sm, paddingBottom: space.md },
 });
