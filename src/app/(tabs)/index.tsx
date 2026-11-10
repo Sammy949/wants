@@ -56,7 +56,6 @@ export default function WantsScreen() {
           art={<EmptyWantsArt />}
           title="Nothing here yet"
           body="A thing to buy, a goal to hit, a place to go. Write the first one down."
-          action={<Button label="New want" icon={PlusIcon} onPress={() => router.push("/want/new")} />}
         />
       ) : (
         <>
@@ -94,12 +93,14 @@ export default function WantsScreen() {
               ) : undefined
             }
           />
-          {/* Full-width and pinned above the tab bar: the main action, always in thumb reach. */}
-          <View style={styles.action}>
-            <Button label="New want" icon={PlusIcon} block onPress={() => router.push("/want/new")} />
-          </View>
         </>
       )}
+
+      {/* Full-width and pinned above the tab bar in every state, empty included:
+          the main action, always in the same place and in thumb reach. */}
+      <View style={styles.action}>
+        <Button label="New want" icon={PlusIcon} block onPress={() => router.push("/want/new")} />
+      </View>
     </Screen>
   );
 }
