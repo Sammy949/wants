@@ -1,37 +1,44 @@
 import { Image } from "expo-image";
-import { router, useLocalSearchParams } from "expo-router";
-import { ArrowUUpLeftIcon } from "phosphor-react-native/src/icons/ArrowUUpLeft";
-import { CaretLeftIcon } from "phosphor-react-native/src/icons/CaretLeft";
-import { CheckCircleIcon } from "phosphor-react-native/src/icons/CheckCircle";
-import { PencilSimpleIcon } from "phosphor-react-native/src/icons/PencilSimple";
-import { RepeatIcon } from "phosphor-react-native/src/icons/Repeat";
-import { TrashIcon } from "phosphor-react-native/src/icons/Trash";
+import { useLocalSearchParams } from "expo-router";
 import { useEffect, useRef } from "react";
-import { Linking, ScrollView, StyleSheet, View, type ScrollViewInstance } from "react-native";
+import { ScrollView, StyleSheet, View, type ScrollViewInstance } from "react-native";
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Button, IconButton } from "@/components/button";
 import { GotFlow } from "@/components/got-flow";
 import { GotStamp } from "@/components/got-stamp";
-import { wantMeta } from "@/components/tag-card";
 import { Text } from "@/components/text";
+import { ActionBar, Message, TopBar } from "@/components/want-detail/parts";
 import { useWantDetail } from "@/components/want-detail/use-want-detail";
 import { photoUri } from "@/data/photos";
 import { PRICE_LABEL } from "@/data/wants";
-import { formatDay } from "@/lib/dates";
+import { formatDay, formatTargetDate } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 import { useTheme } from "@/theme/theme";
 import { gutter, radius, space } from "@/theme/tokens";
 
+const KIND = { thing: "Thing", goal: "Goal", place: "Place" } as const;
+
+function Fact({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.cell}>
+      <Text variant="meta">{label}</Text>
+      <Text variant="label">{value}</Text>
+    </View>
+  );
+}
+
+/**
+ * A want, calmly: no cards. A status line, a big title, one big amount (what
+ * you paid once got, otherwise the price), a grid of facts, the note, and the
+ * proof photo. The main action is pinned at the bottom; Edit and Delete sit in
+ * the top bar. Chosen from an in-app comparison of four layouts (option C).
+ */
 export default function WantScreen() {
   // got=1 arrives when a got interrupted by Android was finished on relaunch.
   const { id, got } = useLocalSearchParams<{ id: string; got?: string }>();
-  const wantId = Number(id);
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
-  const detail = useWantDetail(wantId, { startCelebrating: got === "1" });
-  const { want, choosing, setChoosing, busy, message, justGot, celebrating, markGot, undoGot, wantAgain, confirmDelete } =
-    detail;
+  const detail = useWantDetail(Number(id), { startCelebrating: got === "1" });
+  const { want, celebrating } = detail;
+
   const scrollRef = useRef<ScrollViewInstance>(null);
   const reduceMotion = useReducedMotion();
   const photoScale = useSharedValue(1);
@@ -39,7 +46,7 @@ export default function WantScreen() {
 
   useEffect(() => {
     if (!celebrating) return;
-    // Bring the photo and stamp into view; the got flow was further down.
+    // The stamp is at the top; the got flow was further down.
     scrollRef.current?.scrollTo({ y: 0, animated: !reduceMotion });
     if (!reduceMotion) {
       photoScale.set(0.94);
@@ -47,38 +54,61 @@ export default function WantScreen() {
     }
   }, [celebrating, reduceMotion, photoScale]);
 
-  const back = (
-    <View style={[styles.bar, { paddingTop: insets.top + space.xs }]}>
-      <IconButton icon={CaretLeftIcon} accessibilityLabel="Back" onPress={() => router.back()} />
-      {want ? (
-        <IconButton
-          icon={PencilSimpleIcon}
-          accessibilityLabel="Edit"
-          onPress={detail.edit}
-        />
-      ) : null}
-    </View>
-  );
-
-  if (detail.missing) {
+  if (detail.missing || !want) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.bg }}>
-        {back}
-        <View style={styles.body}>
-          <Text variant="heading">This want isn&apos;t here any more.</Text>
-        </View>
+      <View style={[styles.screen, { backgroundColor: colors.bg }]}>
+        <TopBar detail={detail} />
+        {detail.missing ? (
+          <Text variant="heading" style={styles.pad}>
+            This want isn&apos;t here any more.
+          </Text>
+        ) : null}
       </View>
     );
   }
-  if (!want) return <View style={{ flex: 1, backgroundColor: colors.bg }}>{back}</View>;
 
-  const price = want.price ? formatMoney(want.price.minor, want.price.currency) : null;
-  const paid = want.paid ? formatMoney(want.paid.minor, want.paid.currency) : null;
+  // Once got, what you paid is the headline number; the price moves to the facts.
+  const amount = want.paid ?? want.price;
+  const amountLabel = want.paid ? "Paid" : PRICE_LABEL[want.kind];
+  const facts: { label: string; value: string }[] = [{ label: "Type", value: KIND[want.kind] }];
+  if (want.targetDate) facts.push({ label: "Aiming for", value: formatTargetDate(want.targetDate) });
+  if (want.paid && want.price) {
+    facts.push({ label: PRICE_LABEL[want.kind], value: formatMoney(want.price.minor, want.price.currency) });
+  }
+  facts.push({ label: "Added", value: formatDay(want.createdAt) });
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      {back}
-      <ScrollView ref={scrollRef} contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxxl }]}>
+    <View style={[styles.screen, { backgroundColor: colors.bg }]}>
+      <TopBar detail={detail} />
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.body}>
+        <View style={styles.status}>
+          {want.gotAt ? <GotStamp celebrate={celebrating} size={44} /> : null}
+          <Text variant="label" color={want.gotAt ? "accent" : "muted"}>
+            {want.gotAt ? `Got ${formatDay(want.gotAt)}` : `Wanting since ${formatDay(want.createdAt)}`}
+          </Text>
+        </View>
+
+        <Text variant="display" accessibilityRole="header" style={styles.title}>
+          {want.title}
+        </Text>
+
+        {amount ? (
+          <View style={styles.amount}>
+            <Text variant="meta">{amountLabel}</Text>
+            <Text variant="number" style={styles.bigNumber}>
+              {formatMoney(amount.minor, amount.currency)}
+            </Text>
+          </View>
+        ) : null}
+
+        <View style={styles.grid}>
+          {facts.map((f) => (
+            <Fact key={f.label} label={f.label} value={f.value} />
+          ))}
+        </View>
+
+        {want.note ? <Text variant="body">{want.note}</Text> : null}
+
         {want.gotAt && want.proofPhoto ? (
           <Animated.View style={photoStyle}>
             <Image
@@ -90,86 +120,30 @@ export default function WantScreen() {
           </Animated.View>
         ) : null}
 
-        <View style={styles.head}>
-          {want.gotAt ? (
-            <View style={styles.gotRow}>
-              <GotStamp celebrate={celebrating} />
-              <Text variant="label" style={styles.gotLabel}>
-                Got {formatDay(want.gotAt)}
-              </Text>
-              {justGot ? <Button label="Undo" variant="plain" icon={ArrowUUpLeftIcon} onPress={undoGot} /> : null}
-            </View>
-          ) : null}
-          <Text variant="display" accessibilityRole="header">
-            {want.title}
-          </Text>
-          {price || paid ? (
-            <View style={styles.amounts}>
-              {price ? (
-                <View style={styles.amount}>
-                  <Text variant="meta">{PRICE_LABEL[want.kind]}</Text>
-                  <Text variant="number" style={styles.price}>
-                    {price}
-                  </Text>
-                </View>
-              ) : null}
-              {paid ? (
-                <View style={styles.amount}>
-                  <Text variant="meta">Paid</Text>
-                  <Text variant="number" style={styles.price}>
-                    {paid}
-                  </Text>
-                </View>
-              ) : null}
-            </View>
-          ) : null}
-          <Text variant="meta">{wantMeta(want)}</Text>
-        </View>
-
-        {want.note ? <Text variant="body">{want.note}</Text> : null}
-
-        {message ? (
-          <View style={styles.message}>
-            <Text variant="body" color="danger" accessibilityRole="alert">
-              {message}
-            </Text>
-            {message.includes("Settings") ? (
-              <Button label="Open Settings" variant="secondary" onPress={() => Linking.openSettings()} />
-            ) : null}
-          </View>
+        <Message detail={detail} />
+        {detail.choosing ? (
+          <GotFlow
+            want={want}
+            busy={detail.busy}
+            onConfirm={detail.markGot}
+            onCancel={() => detail.setChoosing(false)}
+          />
         ) : null}
-
-        {want.gotAt ? (
-          <View style={styles.actions}>
-            <Button label="Want it again" variant="secondary" icon={RepeatIcon} onPress={wantAgain} />
-          </View>
-        ) : choosing ? (
-          <GotFlow want={want} busy={busy} onConfirm={markGot} onCancel={() => setChoosing(false)} />
-        ) : (
-          <View style={styles.actions}>
-            <Button label="I got it" icon={CheckCircleIcon} block onPress={() => setChoosing(true)} />
-          </View>
-        )}
-
-        <View style={styles.danger}>
-          <Button label="Delete" variant="danger" icon={TrashIcon} onPress={confirmDelete} />
-        </View>
       </ScrollView>
+      <ActionBar detail={detail} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  bar: { paddingHorizontal: space.sm, flexDirection: "row", justifyContent: "space-between" },
-  body: { paddingHorizontal: gutter, paddingTop: space.sm, gap: space.xl },
-  photo: { width: "100%", aspectRatio: 4 / 5, borderRadius: radius.lg },
-  head: { gap: space.sm },
-  gotRow: { flexDirection: "row", alignItems: "center", gap: space.md, marginBottom: space.xs },
-  gotLabel: { flex: 1 },
-  amounts: { flexDirection: "row", gap: space.xxl },
+  screen: { flex: 1 },
+  pad: { paddingHorizontal: gutter },
+  body: { paddingHorizontal: gutter, paddingTop: space.lg, paddingBottom: space.xxl, gap: space.xl },
+  status: { flexDirection: "row", alignItems: "center", gap: space.md },
+  title: { fontSize: 38, lineHeight: 44 },
   amount: { gap: 2 },
-  price: { fontSize: 20, lineHeight: 26 },
-  message: { gap: space.md, alignItems: "flex-start" },
-  actions: { gap: space.md },
-  danger: { marginTop: space.lg, alignItems: "flex-start" },
+  bigNumber: { fontSize: 34, lineHeight: 40, fontWeight: "700" },
+  grid: { flexDirection: "row", flexWrap: "wrap", rowGap: space.lg },
+  cell: { width: "50%", gap: 2, paddingRight: space.md },
+  photo: { width: "100%", aspectRatio: 4 / 3, borderRadius: radius.lg },
 });
