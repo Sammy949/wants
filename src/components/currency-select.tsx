@@ -40,7 +40,8 @@ export function CurrencyButton({ value, open, onPress, fill = "bg" }: CurrencyBu
 }
 
 interface CurrencyListProps {
-  value: CurrencyCode;
+  /** Undefined when nothing is chosen yet. */
+  value: CurrencyCode | undefined;
   onSelect: (code: CurrencyCode) => void;
   fill?: "bg" | "surface";
 }

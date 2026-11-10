@@ -36,6 +36,7 @@ function AppStack() {
         <Stack.Screen name="want/new" options={{ ...SHEET, sheetAllowedDetents: "fitToContents" }} />
         <Stack.Screen name="want/[id]" />
         <Stack.Screen name="want/edit/[id]" options={SHEET} />
+        <Stack.Screen name="settings" />
       </Stack>
     </>
   );
