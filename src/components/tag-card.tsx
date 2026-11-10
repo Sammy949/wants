@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, View, type LayoutChangeEvent } from "react-native";
 import Svg, { Path } from "react-native-svg";
-import type { Want } from "@/data/wants";
+import { PRICE_LABEL, type Want } from "@/data/wants";
 import { formatTargetDate } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 import { useTheme } from "@/theme/theme";
@@ -43,7 +43,7 @@ export function TagCard({ want, onPress }: TagCardProps) {
       onPress={onPress}
       onLayout={onLayout}
       accessibilityRole="button"
-      accessibilityLabel={[want.title, price, meta].filter(Boolean).join(", ")}
+      accessibilityLabel={[want.title, price && `${PRICE_LABEL[want.kind]} ${price}`, meta].filter(Boolean).join(", ")}
       style={styles.card}
     >
       {({ pressed }) => (
