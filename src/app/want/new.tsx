@@ -89,6 +89,8 @@ export default function NewWantSheet() {
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets
+        // The sheet is already below the status bar; don't let iOS add a safe-area inset on top.
+        contentInsetAdjustmentBehavior="never"
       >
         <TextInput
           value={title}
@@ -177,11 +179,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: gutter,
     paddingTop: space.lg,
-    paddingBottom: space.sm,
+    paddingBottom: space.md,
   },
   scroll: { flex: 1 },
   body: { paddingHorizontal: gutter, paddingTop: space.sm, gap: space.xxl },
-  title: { fontFamily: fonts.display500, fontSize: 24, lineHeight: 32, minHeight: 56, paddingVertical: space.sm },
+  // No lineHeight here: on iOS it shifts a single-line TextInput's text upward,
+  // out of its box and into the header above. Height comes from padding instead.
+  title: { fontFamily: fonts.display500, fontSize: 24, minHeight: 56, paddingVertical: space.md },
   group: { gap: space.sm },
   optional: { gap: space.sm },
   priceRow: { flexDirection: "row", gap: space.sm },
