@@ -5,35 +5,18 @@ import { EmptyState } from "@/components/empty-state";
 import { EmptyGotArt } from "@/components/illustrations";
 import { PhotoTile } from "@/components/photo-tile";
 import { Screen } from "@/components/screen";
-import { Text } from "@/components/text";
+import { TabHeader } from "@/components/tab-header";
 import { useLiveQuery } from "@/data/provider";
 import { gutter, space } from "@/theme/tokens";
 
 export default function GotScreen() {
   const got = useLiveQuery("got", (repo) => repo.listGot());
-  const stats = useLiveQuery("stats", (repo) => repo.stats());
   const items = got.data ?? [];
   const [first, ...rest] = items;
 
   return (
     <Screen padded={false}>
-      <View style={styles.header}>
-        <Text variant="display" accessibilityRole="header">
-          Got
-        </Text>
-        {stats.data && items.length > 0 ? (
-          <Text variant="meta" style={styles.count}>
-            <Text variant="meta" color="ink" style={styles.countNumber}>
-              {stats.data.gotThisYear}
-            </Text>{" "}
-            this year{"\n"}
-            <Text variant="meta" color="ink" style={styles.countNumber}>
-              {stats.data.got}
-            </Text>{" "}
-            all time
-          </Text>
-        ) : null}
-      </View>
+      <TabHeader title="Got" />
 
       {got.data !== undefined && items.length === 0 ? (
         <EmptyState
@@ -59,16 +42,6 @@ export default function GotScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    paddingHorizontal: gutter,
-    marginBottom: space.lg,
-    gap: space.md,
-  },
-  count: { textAlign: "right", paddingBottom: 3 },
-  countNumber: { fontWeight: "600", fontVariant: ["tabular-nums"] },
   grid: { paddingHorizontal: gutter, paddingBottom: space.xxxl, gap: space.md },
   hero: { width: "100%", aspectRatio: 4 / 3 },
   rows: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: space.md },

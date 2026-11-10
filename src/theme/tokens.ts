@@ -15,6 +15,9 @@ export const palettes = {
     line: "rgba(21, 33, 26, 0.10)",
     /** Pressed-state overlay. */
     press: "rgba(21, 33, 26, 0.06)",
+    /** Selected filter pill: white with ink text. */
+    pill: "#ffffff",
+    onPill: "#15211a",
   },
   dark: {
     bg: "#0e1411",
@@ -25,6 +28,9 @@ export const palettes = {
     danger: "#eea493",
     line: "rgba(228, 234, 227, 0.10)",
     press: "rgba(228, 234, 227, 0.08)",
+    /** Selected filter pill: near-white with near-black text, same as light. */
+    pill: "#e4eae3",
+    onPill: "#0e1411",
   },
 } as const;
 

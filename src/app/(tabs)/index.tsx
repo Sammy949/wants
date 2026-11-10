@@ -6,12 +6,14 @@ import { Button } from "@/components/button";
 import { EmptyState } from "@/components/empty-state";
 import { EmptyWantsArt } from "@/components/illustrations";
 import { Screen } from "@/components/screen";
+import { TabHeader } from "@/components/tab-header";
 import { TagCard } from "@/components/tag-card";
 import { Text } from "@/components/text";
 import { useLiveQuery } from "@/data/provider";
 import { useRecoverPendingGot } from "@/data/use-recover-pending-got";
 import type { WantKind } from "@/data/wants";
-import { gutter, space } from "@/theme/tokens";
+import { useTheme } from "@/theme/theme";
+import { gutter, radius, space } from "@/theme/tokens";
 
 const FILTERS: { key: WantKind | "all"; label: string }[] = [
   { key: "all", label: "All" },
@@ -23,9 +25,9 @@ const FILTERS: { key: WantKind | "all"; label: string }[] = [
 export default function WantsScreen() {
   // First screen after launch: finish any got that Android interrupted.
   useRecoverPendingGot();
+  const { colors } = useTheme();
   const [filter, setFilter] = useState<WantKind | "all">("all");
   const wants = useLiveQuery("wanting", (repo) => repo.listWanting());
-  const stats = useLiveQuery("stats", (repo) => repo.stats());
 
   const list = (wants.data ?? []).filter((w) => filter === "all" || w.kind === filter);
   const loaded = wants.data !== undefined;
@@ -33,23 +35,7 @@ export default function WantsScreen() {
 
   return (
     <Screen padded={false}>
-      <View style={styles.header}>
-        <Text variant="display" accessibilityRole="header">
-          Wants
-        </Text>
-        {stats.data && !empty ? (
-          <Text variant="meta" style={styles.count}>
-            <Text variant="meta" color="ink" style={styles.countNumber}>
-              {stats.data.wanting}
-            </Text>{" "}
-            wanting{"\n"}
-            <Text variant="meta" color="ink" style={styles.countNumber}>
-              {stats.data.gotThisYear}
-            </Text>{" "}
-            got this year
-          </Text>
-        ) : null}
-      </View>
+      <TabHeader title="Wants" />
 
       {empty ? (
         <EmptyState
@@ -68,10 +54,9 @@ export default function WantsScreen() {
                   onPress={() => setFilter(f.key)}
                   accessibilityRole="tab"
                   accessibilityState={{ selected }}
-                  hitSlop={8}
-                  style={styles.filter}
+                  style={[styles.filter, selected && { backgroundColor: colors.pill }]}
                 >
-                  <Text variant={selected ? "label" : "body"} color={selected ? "ink" : "muted"} style={styles.filterText}>
+                  <Text variant="label" style={{ color: selected ? colors.onPill : colors.muted }}>
                     {f.label}
                   </Text>
                 </Pressable>
@@ -106,19 +91,9 @@ export default function WantsScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    paddingHorizontal: gutter,
-    marginBottom: space.lg,
-    gap: space.md,
-  },
-  count: { textAlign: "right", paddingBottom: 3 },
-  countNumber: { fontWeight: "600", fontVariant: ["tabular-nums"] },
-  filters: { flexDirection: "row", gap: space.xl, paddingHorizontal: gutter, marginBottom: space.md },
-  filter: { minHeight: 32, justifyContent: "center" },
-  filterText: { fontSize: 15 },
+  filters: { flexDirection: "row", gap: space.xs, paddingHorizontal: gutter - space.md, marginBottom: space.md },
+  // Same padding selected or not, so labels don't shift when the pill moves.
+  filter: { minHeight: 36, paddingHorizontal: space.md, borderRadius: radius.lg, justifyContent: "center" },
   listView: { flex: 1 },
   list: { paddingHorizontal: gutter, paddingBottom: space.lg },
   filterEmpty: { paddingTop: space.xl },
