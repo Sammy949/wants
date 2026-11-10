@@ -26,6 +26,13 @@ export const MIGRATIONS: readonly string[] = [
   CREATE INDEX wants_wanting ON wants (created_at DESC) WHERE got_at IS NULL;
   CREATE INDEX wants_got ON wants (got_at DESC) WHERE got_at IS NOT NULL;
   `,
+  // v2: what was actually paid when it was got. Its own currency, because a
+  // goal with no price can still have cost something. Pairing (both or neither)
+  // is enforced in the repo: SQLite can't add a table CHECK with ALTER TABLE.
+  `
+  ALTER TABLE wants ADD COLUMN paid_minor INTEGER CHECK (paid_minor IS NULL OR paid_minor >= 0);
+  ALTER TABLE wants ADD COLUMN paid_currency TEXT;
+  `,
 ];
 
 export async function migrate(db: Db): Promise<void> {

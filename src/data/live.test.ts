@@ -21,7 +21,7 @@ describe("withNotify", () => {
     await expect(repo.create({ title: " ", kind: "thing" })).rejects.toThrow();
     expect(listener).toHaveBeenCalledTimes(1);
 
-    await repo.markGot(want.id, null);
+    await repo.markGot(want.id);
     expect(listener).toHaveBeenCalledTimes(2);
 
     unsubscribe();

@@ -25,6 +25,8 @@ export interface Want {
   /** ISO timestamp. Null while still wanted. */
   gotAt: string | null;
   proofPhoto: string | null;
+  /** What was actually paid, recorded when marked as got. */
+  paid: Price | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -53,15 +55,31 @@ interface WantRow {
   reference_photo: string | null;
   got_at: string | null;
   proof_photo: string | null;
+  paid_minor: number | null;
+  paid_currency: string | null;
   created_at: string;
   updated_at: string;
 }
 
+function toPrice(minor: number | null, currency: string | null): Price | null {
+  return minor !== null && currency !== null && isCurrencyCode(currency) ? { minor, currency } : null;
+}
+
+function validPrice(price: Price): boolean {
+  return Number.isSafeInteger(price.minor) && price.minor >= 0 && isCurrencyCode(price.currency);
+}
+
+/** What the amount is called for each type of want. */
+export const PRICE_LABEL: Record<WantKind, string> = { thing: "Price", place: "Budget", goal: "Cost" };
+
+export interface MarkGotOptions {
+  proofPhoto?: string | null;
+  paid?: Price | null;
+  gotAt?: Date;
+}
+
 function toWant(row: WantRow): Want {
-  const price =
-    row.price_minor !== null && row.currency !== null && isCurrencyCode(row.currency)
-      ? { minor: row.price_minor, currency: row.currency }
-      : null;
+  const price = toPrice(row.price_minor, row.currency);
   return {
     id: row.id,
     title: row.title,
@@ -73,6 +91,7 @@ function toWant(row: WantRow): Want {
     referencePhoto: row.reference_photo,
     gotAt: row.got_at,
     proofPhoto: row.proof_photo,
+    paid: toPrice(row.paid_minor, row.paid_currency),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -89,7 +108,7 @@ function validate(input: WantInput) {
   if (title.length > TITLE_MAX) throw new WantValidationError(`Keep the name under ${TITLE_MAX} characters.`);
   if (!(WANT_KINDS as readonly string[]).includes(input.kind)) throw new WantValidationError("Unknown kind.");
   const price = input.price ?? null;
-  if (price && (!Number.isSafeInteger(price.minor) || price.minor < 0 || !isCurrencyCode(price.currency))) {
+  if (price && !validPrice(price)) {
     throw new WantValidationError("That price isn't valid.");
   }
   const targetDate = input.targetDate ?? null;
@@ -175,21 +194,23 @@ export function createWantsRepo(db: Db, clock: Clock = systemClock) {
       return { want: await mustGet(id), replacedPhoto };
     },
 
-    /** Mark as got. The proof photo is optional so a goal can be marked without one. */
-    async markGot(id: number, proofPhoto: string | null, gotAt: Date = clock()): Promise<Want> {
+    /** Mark as got. Photo and paid amount are both optional. */
+    async markGot(id: number, options: MarkGotOptions = {}): Promise<Want> {
+      const { proofPhoto = null, paid = null, gotAt = clock() } = options;
       const before = await mustGet(id);
       if (before.gotAt) throw new Error("Already marked as got.");
-      const ts = now();
-      await db.runAsync("UPDATE wants SET got_at = ?, proof_photo = ?, updated_at = ? WHERE id = ?", [
-        gotAt.toISOString(), proofPhoto, ts, id,
-      ]);
+      if (paid && !validPrice(paid)) throw new WantValidationError("That amount isn't valid.");
+      await db.runAsync(
+        "UPDATE wants SET got_at = ?, proof_photo = ?, paid_minor = ?, paid_currency = ?, updated_at = ? WHERE id = ?",
+        [gotAt.toISOString(), proofPhoto, paid?.minor ?? null, paid?.currency ?? null, now(), id],
+      );
       return mustGet(id);
     },
 
     /** Move back to wanting. Returns the proof photo that is no longer referenced. */
     async unmarkGot(id: number): Promise<{ want: Want; removedPhoto: string | null }> {
       const before = await mustGet(id);
-      await db.runAsync("UPDATE wants SET got_at = NULL, proof_photo = NULL, updated_at = ? WHERE id = ?", [
+      await db.runAsync("UPDATE wants SET got_at = NULL, proof_photo = NULL, paid_minor = NULL, paid_currency = NULL, updated_at = ? WHERE id = ?", [
         now(), id,
       ]);
       return { want: await mustGet(id), removedPhoto: before.proofPhoto };

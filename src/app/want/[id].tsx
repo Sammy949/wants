@@ -48,7 +48,7 @@ export default function WantScreen() {
         saved = await savePhoto(picked.uri);
       }
       setBusy(true);
-      await repo.markGot(wantId, saved);
+      await repo.markGot(wantId, { proofPhoto: saved });
       setChoosing(false);
     } catch {
       // Don't leave a copied photo behind if the database write failed.
