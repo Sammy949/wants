@@ -8,7 +8,7 @@ import { Disclosure } from "@/components/disclosure";
 import { Segmented } from "@/components/segmented";
 import { Text } from "@/components/text";
 import { useWantsRepo } from "@/data/provider";
-import { TITLE_MAX, WantValidationError, type WantKind } from "@/data/wants";
+import { PRICE_LABEL, TITLE_MAX, WantValidationError, type WantKind } from "@/data/wants";
 import { formatMoney, parseAmount, type CurrencyCode } from "@/lib/money";
 import { useTheme } from "@/theme/theme";
 import { fonts, gutter, minTouch, radius, space } from "@/theme/tokens";
@@ -31,7 +31,10 @@ export default function NewWantSheet() {
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState<CurrencyCode>("NGN");
   const [note, setNote] = useState("");
-  const [open, setOpen] = useState<Section>(null);
+  // Things almost always have a price, so the form starts with it open.
+  const [open, setOpen] = useState<Section>("price");
+  // Goals hide the cost row until asked for, since most goals don't cost money.
+  const [goalCostAsked, setGoalCostAsked] = useState(false);
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -44,6 +47,18 @@ export default function NewWantSheet() {
   const priceSummary = !amount.trim() ? "Add" : parsed === null ? amount : formatMoney(parsed, currency);
   const noteSummary = note.trim() ? note.trim().split("\n")[0] : "Add";
 
+  const priceLabel = PRICE_LABEL[kind];
+  // Never hide a field that has something in it, whatever the type.
+  const showPrice = kind !== "goal" || goalCostAsked || amount.trim() !== "";
+
+  function changeType(next: WantKind) {
+    setKind(next);
+    setCurrencyOpen(false);
+    if (amount.trim()) return;
+    if (next === "thing") setOpen((o) => o ?? "price");
+    else if (open === "price") setOpen(null);
+  }
+
   function toggle(section: Exclude<Section, null>) {
     setOpen((current) => (current === section ? null : section));
     setCurrencyOpen(false);
@@ -55,7 +70,7 @@ export default function NewWantSheet() {
     if (amount.trim()) {
       if (parsed === null) {
         setOpen("price");
-        setError("That price isn't a valid amount.");
+        setError(`That ${priceLabel.toLowerCase()} isn't a valid amount.`);
         return;
       }
       price = { minor: parsed, currency };
@@ -106,39 +121,41 @@ export default function NewWantSheet() {
 
         <View style={styles.group}>
           <Text variant="label">Type</Text>
-          <Segmented options={TYPES} value={kind} onChange={setKind} accessibilityLabel="Type" />
+          <Segmented options={TYPES} value={kind} onChange={changeType} accessibilityLabel="Type" />
         </View>
 
         <View style={styles.optional}>
-          <Disclosure
-            label="Price"
-            summary={priceSummary}
-            filled={!!amount.trim()}
-            open={open === "price"}
-            onToggle={() => toggle("price")}
-          >
-            <View style={styles.priceRow}>
-              <CurrencyButton value={currency} open={currencyOpen} onPress={() => setCurrencyOpen((o) => !o)} />
-              <TextInput
-                value={amount}
-                onChangeText={setAmount}
-                placeholder="0"
-                placeholderTextColor={colors.muted}
-                keyboardType="decimal-pad"
-                accessibilityLabel={`Price in ${currency}`}
-                style={[styles.input, styles.amount, field]}
-              />
-            </View>
-            {currencyOpen ? (
-              <CurrencyList
-                value={currency}
-                onSelect={(code) => {
-                  setCurrency(code);
-                  setCurrencyOpen(false);
-                }}
-              />
-            ) : null}
-          </Disclosure>
+          {showPrice ? (
+            <Disclosure
+              label={priceLabel}
+              summary={priceSummary}
+              filled={!!amount.trim()}
+              open={open === "price"}
+              onToggle={() => toggle("price")}
+            >
+              <View style={styles.priceRow}>
+                <CurrencyButton value={currency} open={currencyOpen} onPress={() => setCurrencyOpen((o) => !o)} />
+                <TextInput
+                  value={amount}
+                  onChangeText={setAmount}
+                  placeholder="0"
+                  placeholderTextColor={colors.muted}
+                  keyboardType="decimal-pad"
+                  accessibilityLabel={`${priceLabel} in ${currency}`}
+                  style={[styles.input, styles.amount, field]}
+                />
+              </View>
+              {currencyOpen ? (
+                <CurrencyList
+                  value={currency}
+                  onSelect={(code) => {
+                    setCurrency(code);
+                    setCurrencyOpen(false);
+                  }}
+                />
+              ) : null}
+            </Disclosure>
+          ) : null}
 
           <Disclosure
             label="Note"
@@ -158,6 +175,18 @@ export default function NewWantSheet() {
               style={[styles.input, styles.note, field]}
             />
           </Disclosure>
+
+          {!showPrice ? (
+            <Button
+              label="Add a cost"
+              variant="plain"
+              onPress={() => {
+                setGoalCostAsked(true);
+                setOpen("price");
+                setCurrencyOpen(false);
+              }}
+            />
+          ) : null}
         </View>
 
         {error ? (
