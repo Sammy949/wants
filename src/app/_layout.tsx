@@ -16,23 +16,23 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function AppStack() {
   const { scheme, colors } = useTheme();
+  // Native bottom sheet on both platforms: system drag, detents and dismiss.
+  // Sheet screens must use a ScrollView as their root on iOS (see WantForm).
+  const SHEET = {
+    presentation: "formSheet" as const,
+    sheetAllowedDetents: [0.7, 0.95],
+    sheetGrabberVisible: true,
+    sheetCornerRadius: 24,
+    contentStyle: { backgroundColor: colors.bg },
+  };
   return (
     <>
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen
-          name="want/new"
-          options={{
-            // Native bottom sheet on both platforms: system drag, detents and dismiss.
-            presentation: "formSheet",
-            sheetAllowedDetents: [0.7, 0.95],
-            sheetGrabberVisible: true,
-            sheetCornerRadius: 24,
-            contentStyle: { backgroundColor: colors.bg },
-          }}
-        />
+        <Stack.Screen name="want/new" options={SHEET} />
         <Stack.Screen name="want/[id]" />
+        <Stack.Screen name="want/edit/[id]" options={SHEET} />
       </Stack>
     </>
   );

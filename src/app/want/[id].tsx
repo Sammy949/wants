@@ -2,6 +2,7 @@ import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { ArrowCounterClockwiseIcon } from "phosphor-react-native/src/icons/ArrowCounterClockwise";
 import { CaretLeftIcon } from "phosphor-react-native/src/icons/CaretLeft";
+import { PencilSimpleIcon } from "phosphor-react-native/src/icons/PencilSimple";
 import { useState } from "react";
 import { Alert, Linking, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -91,6 +92,13 @@ export default function WantScreen() {
   const back = (
     <View style={[styles.bar, { paddingTop: insets.top + space.xs }]}>
       <IconButton icon={CaretLeftIcon} accessibilityLabel="Back" onPress={() => router.back()} />
+      {want ? (
+        <IconButton
+          icon={PencilSimpleIcon}
+          accessibilityLabel="Edit"
+          onPress={() => router.push(`/want/edit/${wantId}`)}
+        />
+      ) : null}
     </View>
   );
 
@@ -190,7 +198,7 @@ export default function WantScreen() {
 }
 
 const styles = StyleSheet.create({
-  bar: { paddingHorizontal: space.sm },
+  bar: { paddingHorizontal: space.sm, flexDirection: "row", justifyContent: "space-between" },
   body: { paddingHorizontal: gutter, paddingTop: space.sm, gap: space.xl },
   photo: { width: "100%", aspectRatio: 4 / 5, borderRadius: radius.lg },
   head: { gap: space.sm },
