@@ -83,3 +83,16 @@ export function formatMoney(minor: number, currency: CurrencyCode, locale?: stri
   const whole = minor % factor === 0;
   return formatter(currency, whole ? 0 : digits, locale).format(minor / factor);
 }
+
+/**
+ * Minor units back to what someone would type: no symbol, no separators,
+ * decimals only when needed. 120000000 NGN -> "1200000", 1999 USD -> "19.99".
+ */
+export function toAmountInput(minor: number, currency: CurrencyCode): string {
+  const digits = minorDigits(currency);
+  if (digits === 0) return String(minor);
+  const factor = 10 ** digits;
+  const whole = Math.floor(minor / factor);
+  const fraction = minor % factor;
+  return fraction === 0 ? String(whole) : `${whole}.${String(fraction).padStart(digits, "0")}`;
+}

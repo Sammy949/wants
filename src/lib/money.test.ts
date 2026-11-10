@@ -1,4 +1,4 @@
-import { CURRENCIES, CURRENCY_INFO, formatMoney, isCurrencyCode, minorDigits, parseAmount } from "./money";
+import { CURRENCIES, CURRENCY_INFO, formatMoney, toAmountInput, isCurrencyCode, minorDigits, parseAmount } from "./money";
 
 describe("minorDigits", () => {
   it("knows two-decimal and zero-decimal currencies", () => {
@@ -68,6 +68,25 @@ describe("CURRENCY_INFO", () => {
     for (const code of CURRENCIES) {
       expect(CURRENCY_INFO[code].symbol).toBeTruthy();
       expect(CURRENCY_INFO[code].name).toBeTruthy();
+    }
+  });
+});
+
+describe("toAmountInput", () => {
+  it.each([
+    [120000000, "NGN", "1200000"],
+    [1999, "USD", "19.99"],
+    [1905, "USD", "19.05"],
+    [1950, "USD", "19.50"],
+    [1599, "JPY", "1599"],
+    [0, "NGN", "0"],
+  ] as const)("turns %p %s into %p", (minor, currency, expected) => {
+    expect(toAmountInput(minor, currency)).toBe(expected);
+  });
+
+  it("round-trips through parseAmount", () => {
+    for (const minor of [0, 1, 99, 100, 123456789]) {
+      expect(parseAmount(toAmountInput(minor, "NGN"), "NGN")).toBe(minor);
     }
   });
 });
