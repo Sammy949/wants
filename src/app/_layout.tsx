@@ -17,7 +17,8 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 function AppStack() {
   const { scheme, colors } = useTheme();
   // Native bottom sheet on both platforms: system drag, detents and dismiss.
-  // Sheet screens must use a ScrollView as their root on iOS (see WantForm).
+  // iOS rule: a scrolling sheet must have its ScrollView as the root (WantForm);
+  // a content-sized sheet uses a plain View root (NewWantFlow).
   const SHEET = {
     presentation: "formSheet" as const,
     sheetAllowedDetents: [0.7, 0.95],
@@ -30,7 +31,8 @@ function AppStack() {
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="want/new" options={SHEET} />
+        {/* New want sizes to each step; Edit keeps fixed heights for its longer form. */}
+        <Stack.Screen name="want/new" options={{ ...SHEET, sheetAllowedDetents: "fitToContents" }} />
         <Stack.Screen name="want/[id]" />
         <Stack.Screen name="want/edit/[id]" options={SHEET} />
       </Stack>
