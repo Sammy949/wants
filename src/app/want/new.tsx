@@ -1,10 +1,10 @@
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, TextInput, View } from "react-native";
+import { Platform, ScrollView, StyleSheet, TextInput, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "@/components/button";
 import { CurrencyButton, CurrencyList } from "@/components/currency-select";
 import { Disclosure } from "@/components/disclosure";
-import { Drawer, DrawerGrab, useDrawer } from "@/components/drawer";
 import { Segmented } from "@/components/segmented";
 import { Text } from "@/components/text";
 import { useWantsRepo } from "@/data/provider";
@@ -21,17 +21,9 @@ const TYPES = [
 
 type Section = "price" | "note" | null;
 
-export default function NewWantScreen() {
-  return (
-    <Drawer onDismiss={() => router.back()} accessibilityLabel="New want">
-      <NewWantForm />
-    </Drawer>
-  );
-}
-
-function NewWantForm() {
-  const { close } = useDrawer();
+export default function NewWantSheet() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const repo = useWantsRepo();
 
   const [title, setTitle] = useState("");
@@ -86,7 +78,7 @@ function NewWantForm() {
     setSaving(true);
     try {
       await repo.create({ title, kind, price, note });
-      close();
+      router.back();
     } catch (e) {
       setError(e instanceof WantValidationError ? e.message : "Couldn't save. Try again.");
       setSaving(false);
@@ -96,20 +88,25 @@ function NewWantForm() {
   const field = { backgroundColor: colors.bg, color: colors.ink };
 
   return (
-    <>
-      <DrawerGrab>
-        <View style={styles.bar}>
-          <Text variant="heading" accessibilityRole="header">
-            New want
-          </Text>
-          <Button label="Save" onPress={save} disabled={saving || !title.trim()} />
-        </View>
-      </DrawerGrab>
+    <View style={[styles.sheet, { backgroundColor: colors.bg }]}>
+      {/* iOS draws its own grabber; Android's sheet doesn't, so draw one. */}
+      {Platform.OS === "android" ? <View style={[styles.handle, { backgroundColor: colors.line }]} /> : null}
+
+      {/* Opaque and stacked above the form, so Save stays tappable whatever the scroll view does. */}
+      <View style={[styles.bar, { backgroundColor: colors.bg }]}>
+        <Text variant="heading" accessibilityRole="header">
+          New want
+        </Text>
+        <Button label="Save" onPress={save} disabled={saving || !title.trim()} />
+      </View>
 
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.body, { paddingBottom: space.xxl }]}
+        contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
         keyboardShouldPersistTaps="handled"
+        // No automaticallyAdjustKeyboardInsets: inside an iOS form sheet it fights the
+        // sheet's own keyboard handling and pushed this scroll view over the header.
+        contentInsetAdjustmentBehavior="never"
       >
         <TextInput
           value={title}
@@ -199,21 +196,24 @@ function NewWantForm() {
           </Text>
         ) : null}
       </ScrollView>
-    </>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  sheet: { flex: 1 },
+  handle: { alignSelf: "center", width: 36, height: 5, borderRadius: 3, marginTop: space.sm },
   bar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: gutter,
-    paddingTop: space.xs,
+    paddingTop: space.lg,
     paddingBottom: space.md,
+    zIndex: 1,
   },
-  // Size to content, and shrink (then scroll) when the drawer hits its max height.
-  scroll: { flexGrow: 0, flexShrink: 1 },
+  // No overflow: "hidden" here: in an iOS form sheet it stopped the form painting at all.
+  scroll: { flex: 1 },
   body: { paddingHorizontal: gutter, paddingTop: space.sm, gap: space.xxl },
   // No lineHeight here: on iOS it shifts a single-line TextInput's text upward,
   // out of its box and into the header above. Height comes from padding instead.

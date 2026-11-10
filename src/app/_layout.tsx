@@ -11,8 +11,6 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { KeyboardProvider } from "react-native-keyboard-controller";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -26,11 +24,12 @@ function AppStack() {
         <Stack.Screen
           name="want/new"
           options={{
-            // The screen draws its own drawer (components/drawer.tsx), so it is shown
-            // transparently over the list with no navigation animation of its own.
-            presentation: "transparentModal",
-            animation: "none",
-            contentStyle: { backgroundColor: "transparent" },
+            // Native bottom sheet on both platforms: system drag, detents and dismiss.
+            presentation: "formSheet",
+            sheetAllowedDetents: [0.7, 0.95],
+            sheetGrabberVisible: true,
+            sheetCornerRadius: 24,
+            contentStyle: { backgroundColor: colors.bg },
           }}
         />
         <Stack.Screen name="want/[id]" />
@@ -51,14 +50,10 @@ export default function RootLayout() {
   if (!loaded && !error) return null;
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <KeyboardProvider>
-        <ThemeProvider>
-          <DataProvider>
-            <AppStack />
-          </DataProvider>
-        </ThemeProvider>
-      </KeyboardProvider>
-    </GestureHandlerRootView>
+    <ThemeProvider>
+      <DataProvider>
+        <AppStack />
+      </DataProvider>
+    </ThemeProvider>
   );
 }
