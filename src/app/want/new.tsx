@@ -92,7 +92,8 @@ export default function NewWantSheet() {
       {/* iOS draws its own grabber; Android's sheet doesn't, so draw one. */}
       {Platform.OS === "android" ? <View style={[styles.handle, { backgroundColor: colors.line }]} /> : null}
 
-      <View style={styles.bar}>
+      {/* Opaque and stacked above the form, so Save stays tappable whatever the scroll view does. */}
+      <View style={[styles.bar, { backgroundColor: colors.bg }]}>
         <Text variant="heading" accessibilityRole="header">
           New want
         </Text>
@@ -103,8 +104,8 @@ export default function NewWantSheet() {
         style={styles.scroll}
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
         keyboardShouldPersistTaps="handled"
-        automaticallyAdjustKeyboardInsets
-        // The sheet is already below the status bar; don't let iOS add a safe-area inset on top.
+        // No automaticallyAdjustKeyboardInsets: inside an iOS form sheet it fights the
+        // sheet's own keyboard handling and pushed this scroll view over the header.
         contentInsetAdjustmentBehavior="never"
       >
         <TextInput
@@ -209,8 +210,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: gutter,
     paddingTop: space.lg,
     paddingBottom: space.md,
+    zIndex: 1,
   },
-  scroll: { flex: 1 },
+  // Clip to bounds so scrolled content can never paint over the header.
+  scroll: { flex: 1, overflow: "hidden" },
   body: { paddingHorizontal: gutter, paddingTop: space.sm, gap: space.xxl },
   // No lineHeight here: on iOS it shifts a single-line TextInput's text upward,
   // out of its box and into the header above. Height comes from padding instead.
