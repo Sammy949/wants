@@ -51,10 +51,12 @@ describe("delete queue", () => {
     expect(committed).toEqual([1]);
   });
 
-  it("notifies on every change", () => {
+  it("passes a snapshot on every change", () => {
     const { q, onChange } = setup();
     q.add(1, "Desk");
+    expect(onChange).toHaveBeenLastCalledWith({ pendingIds: [1], last: { id: 1, item: "Desk" } });
     q.undoLast();
+    expect(onChange).toHaveBeenLastCalledWith({ pendingIds: [], last: null });
     expect(onChange).toHaveBeenCalledTimes(2);
   });
 });
