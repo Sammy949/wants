@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import { ArrowSquareOutIcon } from "phosphor-react-native/src/icons/ArrowSquareOut";
 import { CheckCircleIcon } from "phosphor-react-native/src/icons/CheckCircle";
 import { PencilSimpleIcon } from "phosphor-react-native/src/icons/PencilSimple";
@@ -17,22 +17,28 @@ export interface WantAction {
 /**
  * The actions available on a want from the list. Adding an action (Share,
  * Pin, ...) means adding an entry here; every sheet layout renders this list.
- * Navigation replaces the sheet so Back goes to the list, not to the sheet.
+ * From a sheet, navigation replaces the sheet so Back goes to the list, and
+ * Delete closes it. From a menu shown on the list itself, navigation pushes.
  */
-export function wantActions(want: Want, remove: (id: number, title: string) => void): {
+export function wantActions(
+  want: Want,
+  remove: (id: number, title: string) => void,
+  { fromSheet = true } = {},
+): {
   main: WantAction[];
   destructive: WantAction[];
 } {
+  const go = (href: Href) => (fromSheet ? router.replace(href) : router.push(href));
   return {
     main: [
       {
         key: "got",
         label: "I got it",
         icon: CheckCircleIcon,
-        run: () => router.replace(`/want/${want.id}?choose=1`),
+        run: () => go(`/want/${want.id}?choose=1`),
       },
-      { key: "open", label: "Open", icon: ArrowSquareOutIcon, run: () => router.replace(`/want/${want.id}`) },
-      { key: "edit", label: "Edit", icon: PencilSimpleIcon, run: () => router.replace(`/want/edit/${want.id}`) },
+      { key: "open", label: "Open", icon: ArrowSquareOutIcon, run: () => go(`/want/${want.id}`) },
+      { key: "edit", label: "Edit", icon: PencilSimpleIcon, run: () => go(`/want/edit/${want.id}`) },
     ],
     destructive: [
       {
@@ -43,7 +49,7 @@ export function wantActions(want: Want, remove: (id: number, title: string) => v
         run: () => {
           // Undo is offered on the list; no "are you sure" alert.
           remove(want.id, want.title);
-          router.back();
+          if (fromSheet) router.back();
         },
       },
     ],
