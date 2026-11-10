@@ -3,6 +3,7 @@ import { Platform, ScrollView, StyleSheet, TextInput, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useWantsRepo } from "@/data/provider";
 import { PRICE_LABEL, TITLE_MAX, WantValidationError, type Price, type WantKind } from "@/data/wants";
+import { formatTargetDate } from "@/lib/dates";
 import { formatMoney, parseAmount, toAmountInput, type CurrencyCode } from "@/lib/money";
 import { useTheme } from "@/theme/theme";
 import { fonts, gutter, minTouch, radius, space } from "@/theme/tokens";
@@ -10,6 +11,7 @@ import { AmountField } from "./amount-field";
 import { Button } from "./button";
 import { Disclosure } from "./disclosure";
 import { Segmented } from "./segmented";
+import { defaultTargetDate, TargetDateField } from "./target-date-field";
 import { Text } from "./text";
 
 const TYPES = [
@@ -18,7 +20,7 @@ const TYPES = [
   { value: "place", label: "Place", hint: "Somewhere to go" },
 ] as const;
 
-type Section = "price" | "paid" | "note" | null;
+type Section = "price" | "paid" | "note" | "date" | null;
 
 export interface WantFormValues {
   title: string;
@@ -27,6 +29,8 @@ export interface WantFormValues {
   note: string;
   /** Only meaningful when the form was opened with showPaid. */
   paid: Price | null;
+  /** Calendar day, YYYY-MM-DD. */
+  targetDate: string | null;
 }
 
 interface WantFormProps {
@@ -63,6 +67,7 @@ export function WantForm({ heading, initial, showPaid = false, onSubmit }: WantF
   const [paidAmount, setPaidAmount] = useState(initialPaid);
   const [paidCurrency, setPaidCurrency] = useState<CurrencyCode>(initialPaidCurrency ?? initialCurrency ?? "NGN");
   const [note, setNote] = useState(initial?.note ?? "");
+  const [targetDate, setTargetDate] = useState<string | null>(initial?.targetDate ?? null);
   // A new thing starts with Price open; an edit starts with everything closed.
   const [open, setOpen] = useState<Section>(initial ? null : "price");
   // Goals hide the cost row until asked for, since most goals don't cost money.
@@ -121,6 +126,7 @@ export function WantForm({ heading, initial, showPaid = false, onSubmit }: WantF
         title,
         kind,
         note,
+        targetDate,
         price: parsed === null ? null : { minor: parsed, currency },
         paid: parsedPaid === null ? null : { minor: parsedPaid, currency: paidCurrency },
       });
@@ -221,6 +227,28 @@ export function WantForm({ heading, initial, showPaid = false, onSubmit }: WantF
               accessibilityLabel="Note"
               style={[styles.note, { backgroundColor: colors.bg, color: colors.ink }]}
             />
+          </Disclosure>
+
+          <Disclosure
+            label="Target date"
+            summary={targetDate ? formatTargetDate(targetDate) : "Add"}
+            filled={!!targetDate}
+            open={open === "date"}
+            onToggle={() => {
+              if (!targetDate) setTargetDate(defaultTargetDate());
+              toggle("date");
+            }}
+          >
+            {targetDate ? (
+              <TargetDateField
+                value={targetDate}
+                onChange={setTargetDate}
+                onRemove={() => {
+                  setTargetDate(null);
+                  setOpen(null);
+                }}
+              />
+            ) : null}
           </Disclosure>
 
           {!showPrice ? (

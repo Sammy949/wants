@@ -15,6 +15,7 @@ export function useNewWantDraft({ selectionHaptic = false } = {}) {
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState<CurrencyCode>(defaultCurrency ?? "NGN");
   const [note, setNote] = useState("");
+  const [targetDate, setTargetDate] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -40,7 +41,7 @@ export function useNewWantDraft({ selectionHaptic = false } = {}) {
     }
     setSaving(true);
     try {
-      await repo.create({ title, kind, note, price: parsed === null ? null : { minor: parsed, currency } });
+      await repo.create({ title, kind, note, targetDate, price: parsed === null ? null : { minor: parsed, currency } });
       router.back();
       return true;
     } catch (e) {
@@ -52,6 +53,7 @@ export function useNewWantDraft({ selectionHaptic = false } = {}) {
 
   return {
     title, setTitle, kind, setKind, amount, setAmount, currency, setCurrency, note, setNote,
+    targetDate, setTargetDate,
     parsed, priceLabel, error, saving, save, canSave: !!title.trim() && !saving,
   };
 }

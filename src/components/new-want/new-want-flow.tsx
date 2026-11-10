@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AmountField } from "@/components/amount-field";
 import { Button, IconButton } from "@/components/button";
 import { Icon } from "@/components/icon";
+import { defaultTargetDate, TargetDateField } from "@/components/target-date-field";
 import { Text } from "@/components/text";
 import { TITLE_MAX } from "@/data/wants";
 import { useTheme } from "@/theme/theme";
@@ -153,13 +154,33 @@ export function NewWantFlow() {
             </View>
           ) : null}
 
-          {!showPrice || !showNote ? (
+          {d.targetDate ? (
+            <View style={styles.field}>
+              <Text variant="meta">Target date</Text>
+              <TargetDateField
+                value={d.targetDate}
+                onChange={d.setTargetDate}
+                onRemove={() => d.setTargetDate(null)}
+                fill="surface"
+              />
+            </View>
+          ) : null}
+
+          {!showPrice || !showNote || !d.targetDate ? (
             <View style={styles.extras}>
               {!showPrice ? (
                 <Button label={d.priceLabel} variant="plain" icon={PlusIcon} onPress={() => setPriceAsked(true)} />
               ) : null}
               {!showNote ? (
                 <Button label="Note" variant="plain" icon={PlusIcon} onPress={() => setNoteAsked(true)} />
+              ) : null}
+              {!d.targetDate ? (
+                <Button
+                  label="Target date"
+                  variant="plain"
+                  icon={PlusIcon}
+                  onPress={() => d.setTargetDate(defaultTargetDate())}
+                />
               ) : null}
             </View>
           ) : null}
@@ -211,5 +232,5 @@ const styles = StyleSheet.create({
     textAlignVertical: "top",
   },
   // Plain buttons carry their own side padding; pull the row back to the gutter.
-  extras: { flexDirection: "row", marginLeft: -space.xl, marginTop: -space.sm },
+  extras: { flexDirection: "row", flexWrap: "wrap", marginLeft: -space.xl, marginTop: -space.sm },
 });

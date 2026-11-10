@@ -28,16 +28,23 @@ export default function EditWantSheet() {
     <WantForm
       heading="Edit want"
       showPaid={isGot}
-      initial={{ title: want.title, kind: want.kind, price: want.price, note: want.note ?? "", paid: want.paid }}
-      onSubmit={async ({ title, kind, price, note, paid }) => {
+      initial={{
+        title: want.title,
+        kind: want.kind,
+        price: want.price,
+        note: want.note ?? "",
+        paid: want.paid,
+        targetDate: want.targetDate,
+      }}
+      onSubmit={async ({ title, kind, price, note, paid, targetDate }) => {
         await repo.update(wantId, {
           title,
           kind,
           price,
           note,
           // Fields this form doesn't show yet are carried over unchanged.
+          targetDate,
           category: want.category,
-          targetDate: want.targetDate,
           referencePhoto: want.referencePhoto,
         });
         if (isGot) await repo.setPaid(wantId, paid);
