@@ -2,8 +2,10 @@ import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { ArrowUUpLeftIcon } from "phosphor-react-native/src/icons/ArrowUUpLeft";
 import { CaretLeftIcon } from "phosphor-react-native/src/icons/CaretLeft";
+import { CheckCircleIcon } from "phosphor-react-native/src/icons/CheckCircle";
 import { PencilSimpleIcon } from "phosphor-react-native/src/icons/PencilSimple";
 import { RepeatIcon } from "phosphor-react-native/src/icons/Repeat";
+import { TrashIcon } from "phosphor-react-native/src/icons/Trash";
 import { useEffect, useRef, useState } from "react";
 import { AccessibilityInfo, Alert, Linking, ScrollView, StyleSheet, View, type ScrollViewInstance } from "react-native";
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from "react-native-reanimated";
@@ -235,12 +237,12 @@ export default function WantScreen() {
           <GotFlow want={want} busy={busy} onConfirm={markGot} onCancel={() => setChoosing(false)} />
         ) : (
           <View style={styles.actions}>
-            <Button label="I got it" block onPress={() => setChoosing(true)} />
+            <Button label="I got it" icon={CheckCircleIcon} block onPress={() => setChoosing(true)} />
           </View>
         )}
 
         <View style={styles.danger}>
-          <Button label="Delete" variant="danger" onPress={confirmDelete} />
+          <Button label="Delete" variant="danger" icon={TrashIcon} onPress={confirmDelete} />
         </View>
       </ScrollView>
     </View>
