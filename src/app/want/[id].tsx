@@ -1,17 +1,17 @@
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { ArrowCounterClockwiseIcon } from "phosphor-react-native/src/icons/ArrowCounterClockwise";
-import { CameraIcon } from "phosphor-react-native/src/icons/Camera";
 import { CaretLeftIcon } from "phosphor-react-native/src/icons/CaretLeft";
-import { ImageIcon } from "phosphor-react-native/src/icons/Image";
 import { useState } from "react";
 import { Alert, Linking, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, IconButton } from "@/components/button";
+import { GotFlow } from "@/components/got-flow";
 import { wantMeta } from "@/components/tag-card";
 import { Text } from "@/components/text";
 import { deletePhotos, photoUri, savePhoto } from "@/data/photos";
 import { useLiveQuery, useWantsRepo } from "@/data/provider";
+import { PRICE_LABEL, type Price } from "@/data/wants";
 import { formatDay } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 import { pickPhoto, type PhotoSource } from "@/lib/pick-photo";
@@ -29,7 +29,7 @@ export default function WantScreen() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  async function markGot(source: PhotoSource | null) {
+  async function markGot(source: PhotoSource | null, paid: Price | null) {
     setMessage(null);
     let saved: string | null = null;
     try {
@@ -48,7 +48,7 @@ export default function WantScreen() {
         saved = await savePhoto(picked.uri);
       }
       setBusy(true);
-      await repo.markGot(wantId, { proofPhoto: saved });
+      await repo.markGot(wantId, { proofPhoto: saved, paid });
       setChoosing(false);
     } catch {
       // Don't leave a copied photo behind if the database write failed.
@@ -107,6 +107,7 @@ export default function WantScreen() {
   if (!want) return <View style={{ flex: 1, backgroundColor: colors.bg }}>{back}</View>;
 
   const price = want.price ? formatMoney(want.price.minor, want.price.currency) : null;
+  const paid = want.paid ? formatMoney(want.paid.minor, want.paid.currency) : null;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -125,10 +126,25 @@ export default function WantScreen() {
           <Text variant="display" accessibilityRole="header">
             {want.title}
           </Text>
-          {price ? (
-            <Text variant="number" style={styles.price}>
-              {price}
-            </Text>
+          {price || paid ? (
+            <View style={styles.amounts}>
+              {price ? (
+                <View style={styles.amount}>
+                  <Text variant="meta">{PRICE_LABEL[want.kind]}</Text>
+                  <Text variant="number" style={styles.price}>
+                    {price}
+                  </Text>
+                </View>
+              ) : null}
+              {paid ? (
+                <View style={styles.amount}>
+                  <Text variant="meta">Paid</Text>
+                  <Text variant="number" style={styles.price}>
+                    {paid}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
           ) : null}
           <Text variant="meta">
             {want.gotAt ? `Got ${formatDay(want.gotAt)} · ${wantMeta(want)}` : wantMeta(want)}
@@ -158,20 +174,7 @@ export default function WantScreen() {
             />
           </View>
         ) : choosing ? (
-          <View style={styles.actions}>
-            <Text variant="label">Add a photo of it</Text>
-            <Button label="Take a photo" icon={CameraIcon} block disabled={busy} onPress={() => markGot("camera")} />
-            <Button
-              label="Choose from photos"
-              icon={ImageIcon}
-              variant="secondary"
-              block
-              disabled={busy}
-              onPress={() => markGot("library")}
-            />
-            <Button label="Mark as got without a photo" variant="plain" disabled={busy} onPress={() => markGot(null)} />
-            <Button label="Not yet" variant="plain" disabled={busy} onPress={() => setChoosing(false)} />
-          </View>
+          <GotFlow want={want} busy={busy} onConfirm={markGot} onCancel={() => setChoosing(false)} />
         ) : (
           <View style={styles.actions}>
             <Button label="I got it" block onPress={() => setChoosing(true)} />
@@ -190,7 +193,9 @@ const styles = StyleSheet.create({
   bar: { paddingHorizontal: space.sm },
   body: { paddingHorizontal: gutter, paddingTop: space.sm, gap: space.xl },
   photo: { width: "100%", aspectRatio: 4 / 5, borderRadius: radius.lg },
-  head: { gap: space.xs },
+  head: { gap: space.sm },
+  amounts: { flexDirection: "row", gap: space.xxl },
+  amount: { gap: 2 },
   price: { fontSize: 20, lineHeight: 26 },
   message: { gap: space.md, alignItems: "flex-start" },
   actions: { gap: space.md },
