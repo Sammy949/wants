@@ -23,6 +23,16 @@ bunx expo-doctor
 
 Add packages with `bunx expo install <package>` so versions match the SDK.
 
+## Icon and splash
+
+The mark is two tags: the outline you want, the filled one you got. It's defined in `scripts/render-brand.py`, which writes SVG sources to `assets/brand/` and the app icon, dark icon, Android adaptive and themed layers, splash and favicon PNGs to `assets/images/`.
+
+```bash
+python3 scripts/render-brand.py   # needs rsvg-convert (librsvg)
+```
+
+Icons and the splash screen only change in a native build, not in Expo Go.
+
 ## Status
 
 Early rebuild. The previous Expo tutorial code has been removed.
