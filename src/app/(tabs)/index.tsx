@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import { PlusIcon } from "phosphor-react-native/src/icons/Plus";
 import { useState } from "react";
-import { AccessibilityInfo, FlatList, Pressable, StyleSheet, View } from "react-native";
+import { FlatList, Pressable, StyleSheet, View } from "react-native";
 import { Button } from "@/components/button";
 import { EmptyState } from "@/components/empty-state";
 import { EmptyWantsArt } from "@/components/illustrations";
@@ -9,9 +9,10 @@ import { Screen } from "@/components/screen";
 import { TabHeader } from "@/components/tab-header";
 import { SwipeToDelete } from "@/components/swipe-to-delete";
 import { TagCard } from "@/components/tag-card";
+import { UndoBar } from "@/components/undo-bar";
+import { useUndoableDelete } from "@/components/use-undoable-delete";
 import { Text } from "@/components/text";
-import { deletePhotos } from "@/data/photos";
-import { useLiveQuery, useWantsRepo } from "@/data/provider";
+import { useLiveQuery } from "@/data/provider";
 import { useRecoverPendingGot } from "@/data/use-recover-pending-got";
 import type { WantKind } from "@/data/wants";
 import { useTheme } from "@/theme/theme";
@@ -28,13 +29,15 @@ export default function WantsScreen() {
   // First screen after launch: finish any got that Android interrupted.
   useRecoverPendingGot();
   const { colors } = useTheme();
-  const repo = useWantsRepo();
   const [filter, setFilter] = useState<WantKind | "all">("all");
   const wants = useLiveQuery("wanting", (repo) => repo.listWanting());
+  const deletion = useUndoableDelete();
 
-  const list = (wants.data ?? []).filter((w) => filter === "all" || w.kind === filter);
+  // Wants waiting out their Undo window are already gone from the user's view.
+  const visible = (wants.data ?? []).filter((w) => !deletion.pendingIds.has(w.id));
+  const list = visible.filter((w) => filter === "all" || w.kind === filter);
   const loaded = wants.data !== undefined;
-  const empty = loaded && wants.data!.length === 0;
+  const empty = loaded && visible.length === 0;
 
   return (
     <Screen padded={false}>
@@ -70,29 +73,24 @@ export default function WantsScreen() {
             data={list}
             keyExtractor={(w) => String(w.id)}
             renderItem={({ item }) => (
-              <SwipeToDelete
-                label={item.title}
-                onDelete={async () => {
-                  deletePhotos(await repo.remove(item.id));
-                  AccessibilityInfo.announceForAccessibility(`Deleted ${item.title}.`);
-                }}
-              >
+              <SwipeToDelete label={item.title} onDelete={() => deletion.remove(item.id, item.title)}>
                 <TagCard want={item} onPress={() => router.push(`/want/${item.id}`)} />
               </SwipeToDelete>
             )}
-            ItemSeparatorComponent={() => <View style={{ height: space.md }} />}
             style={styles.listView}
             contentContainerStyle={styles.list}
             ListEmptyComponent={
               loaded ? (
                 <Text variant="body" color="muted" style={styles.filterEmpty}>
-                  No {FILTERS.find((f) => f.key === filter)!.label.toLowerCase()} yet.
+                  No {FILTERS.find((f) => f.key === filter)!.label.toLowerCase()} here yet.
                 </Text>
               ) : undefined
             }
           />
         </>
       )}
+
+      {deletion.lastTitle ? <UndoBar message={`Deleted ${deletion.lastTitle}`} onUndo={deletion.undo} /> : null}
 
       {/* Full-width and pinned above the tab bar in every state, empty included:
           the main action, always in the same place and in thumb reach. */}
