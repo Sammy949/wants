@@ -1,22 +1,27 @@
 import { router } from "expo-router";
-import { useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Platform, ScrollView, StyleSheet, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "@/components/button";
+import { CurrencyButton, CurrencyList } from "@/components/currency-select";
+import { Disclosure } from "@/components/disclosure";
+import { Segmented } from "@/components/segmented";
 import { Text } from "@/components/text";
 import { useWantsRepo } from "@/data/provider";
 import { TITLE_MAX, WantValidationError, type WantKind } from "@/data/wants";
-import { CURRENCIES, parseAmount, type CurrencyCode } from "@/lib/money";
+import { formatMoney, parseAmount, type CurrencyCode } from "@/lib/money";
 import { useTheme } from "@/theme/theme";
-import { gutter, minTouch, radius, space } from "@/theme/tokens";
+import { fonts, gutter, minTouch, radius, space } from "@/theme/tokens";
 
-const KINDS: { key: WantKind; label: string; hint: string }[] = [
-  { key: "thing", label: "Thing", hint: "Something to buy or own" },
-  { key: "goal", label: "Goal", hint: "Something to do or reach" },
-  { key: "place", label: "Place", hint: "Somewhere to go" },
-];
+const TYPES = [
+  { value: "thing", label: "Thing", hint: "Something to buy or own" },
+  { value: "goal", label: "Goal", hint: "Something to do or reach" },
+  { value: "place", label: "Place", hint: "Somewhere to go" },
+] as const;
 
-export default function NewWantScreen() {
+type Section = "price" | "note" | null;
+
+export default function NewWantSheet() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const repo = useWantsRepo();
@@ -26,21 +31,34 @@ export default function NewWantScreen() {
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState<CurrencyCode>("NGN");
   const [note, setNote] = useState("");
+  const [open, setOpen] = useState<Section>(null);
+  const [currencyOpen, setCurrencyOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const input = [styles.input, { backgroundColor: colors.surface, color: colors.ink }];
+  useEffect(() => {
+    repo.lastCurrency().then((c) => c && setCurrency(c), () => {});
+  }, [repo]);
+
+  const parsed = amount.trim() ? parseAmount(amount, currency) : null;
+  const priceSummary = !amount.trim() ? "Add" : parsed === null ? amount : formatMoney(parsed, currency);
+  const noteSummary = note.trim() ? note.trim().split("\n")[0] : "Add";
+
+  function toggle(section: Exclude<Section, null>) {
+    setOpen((current) => (current === section ? null : section));
+    setCurrencyOpen(false);
+  }
 
   async function save() {
     setError(null);
     let price = null;
     if (amount.trim()) {
-      const minor = parseAmount(amount, currency);
-      if (minor === null) {
+      if (parsed === null) {
+        setOpen("price");
         setError("That price isn't a valid amount.");
         return;
       }
-      price = { minor, currency };
+      price = { minor: parsed, currency };
     }
     setSaving(true);
     try {
@@ -52,22 +70,25 @@ export default function NewWantScreen() {
     }
   }
 
+  const field = { backgroundColor: colors.bg, color: colors.ink };
+
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: colors.bg }}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <View style={[styles.bar, { paddingTop: Platform.OS === "android" ? insets.top + space.sm : space.lg }]}>
-        <Button label="Cancel" variant="plain" onPress={() => router.back()} />
-        <Text variant="label" accessibilityRole="header">
+    <View style={[styles.sheet, { backgroundColor: colors.bg }]}>
+      {/* iOS draws its own grabber; Android's sheet doesn't, so draw one. */}
+      {Platform.OS === "android" ? <View style={[styles.handle, { backgroundColor: colors.line }]} /> : null}
+
+      <View style={styles.bar}>
+        <Text variant="heading" accessibilityRole="header">
           New want
         </Text>
-        <Button label="Save" variant="plain" onPress={save} disabled={saving || !title.trim()} />
+        <Button label="Save" onPress={save} disabled={saving || !title.trim()} />
       </View>
 
       <ScrollView
-        contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxxl }]}
+        style={styles.scroll}
+        contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
         keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
       >
         <TextInput
           value={title}
@@ -78,135 +99,99 @@ export default function NewWantScreen() {
           autoFocus
           returnKeyType="done"
           accessibilityLabel="Name"
-          style={[input, styles.titleInput]}
+          style={[styles.title, { color: colors.ink }]}
         />
 
-        <View style={styles.field}>
-          <Text variant="label">Kind</Text>
-          <View style={styles.kinds} accessibilityRole="radiogroup">
-            {KINDS.map((k) => {
-              const selected = kind === k.key;
-              return (
-                <Pressable
-                  key={k.key}
-                  onPress={() => setKind(k.key)}
-                  accessibilityRole="radio"
-                  accessibilityState={{ checked: selected }}
-                  accessibilityHint={k.hint}
-                  style={[
-                    styles.kind,
-                    { backgroundColor: selected ? colors.ink : colors.surface },
-                  ]}
-                >
-                  <Text variant="label" color={selected ? "bg" : "ink"}>
-                    {k.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
+        <View style={styles.group}>
+          <Text variant="label">Type</Text>
+          <Segmented options={TYPES} value={kind} onChange={setKind} accessibilityLabel="Type" />
         </View>
 
-        <View style={styles.field}>
-          <Text variant="label">
-            Price <Text variant="meta">optional</Text>
-          </Text>
-          <TextInput
-            value={amount}
-            onChangeText={setAmount}
-            placeholder="0"
-            placeholderTextColor={colors.muted}
-            keyboardType="decimal-pad"
-            accessibilityLabel={`Price in ${currency}`}
-            style={[input, styles.number]}
-          />
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.currencies}
-            accessibilityRole="radiogroup"
-            accessibilityLabel="Currency"
-            keyboardShouldPersistTaps="handled"
+        <View style={styles.optional}>
+          <Disclosure
+            label="Price"
+            summary={priceSummary}
+            filled={!!amount.trim()}
+            open={open === "price"}
+            onToggle={() => toggle("price")}
           >
-            {CURRENCIES.map((code) => {
-              const selected = code === currency;
-              return (
-                <Pressable
-                  key={code}
-                  onPress={() => setCurrency(code)}
-                  accessibilityRole="radio"
-                  accessibilityState={{ checked: selected }}
-                  style={[styles.currency, selected && { backgroundColor: colors.surface }]}
-                >
-                  <Text variant={selected ? "label" : "body"} color={selected ? "ink" : "muted"}>
-                    {code}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        </View>
+            <View style={styles.priceRow}>
+              <CurrencyButton value={currency} open={currencyOpen} onPress={() => setCurrencyOpen((o) => !o)} />
+              <TextInput
+                value={amount}
+                onChangeText={setAmount}
+                placeholder="0"
+                placeholderTextColor={colors.muted}
+                keyboardType="decimal-pad"
+                accessibilityLabel={`Price in ${currency}`}
+                style={[styles.input, styles.amount, field]}
+              />
+            </View>
+            {currencyOpen ? (
+              <CurrencyList
+                value={currency}
+                onSelect={(code) => {
+                  setCurrency(code);
+                  setCurrencyOpen(false);
+                }}
+              />
+            ) : null}
+          </Disclosure>
 
-        <View style={styles.field}>
-          <Text variant="label">
-            Note <Text variant="meta">optional</Text>
-          </Text>
-          <TextInput
-            value={note}
-            onChangeText={setNote}
-            placeholder="Why you want it, where to find it"
-            placeholderTextColor={colors.muted}
-            multiline
-            accessibilityLabel="Note"
-            style={[input, styles.note]}
-          />
+          <Disclosure
+            label="Note"
+            summary={noteSummary}
+            filled={!!note.trim()}
+            open={open === "note"}
+            onToggle={() => toggle("note")}
+          >
+            <TextInput
+              value={note}
+              onChangeText={setNote}
+              placeholder="Why you want it, where to find it"
+              placeholderTextColor={colors.muted}
+              multiline
+              autoFocus
+              accessibilityLabel="Note"
+              style={[styles.input, styles.note, field]}
+            />
+          </Disclosure>
         </View>
 
         {error ? (
-          <Text variant="body" color="danger" accessibilityLiveRegion="polite" accessibilityRole="alert">
+          <Text variant="body" color="danger" accessibilityRole="alert">
             {error}
           </Text>
         ) : null}
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  sheet: { flex: 1 },
+  handle: { alignSelf: "center", width: 36, height: 5, borderRadius: 3, marginTop: space.sm },
   bar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: space.sm,
+    paddingHorizontal: gutter,
+    paddingTop: space.lg,
     paddingBottom: space.sm,
   },
-  body: { paddingHorizontal: gutter, paddingTop: space.md, gap: space.xxl },
+  scroll: { flex: 1 },
+  body: { paddingHorizontal: gutter, paddingTop: space.sm, gap: space.xxl },
+  title: { fontFamily: fonts.display500, fontSize: 24, lineHeight: 32, minHeight: 56, paddingVertical: space.sm },
+  group: { gap: space.sm },
+  optional: { gap: space.sm },
+  priceRow: { flexDirection: "row", gap: space.sm },
   input: {
-    borderRadius: radius.md,
-    paddingHorizontal: space.lg,
+    borderRadius: radius.sm,
+    paddingHorizontal: space.md,
     paddingVertical: space.md,
     fontSize: 17,
     minHeight: minTouch,
   },
-  titleInput: { fontSize: 20, minHeight: 56 },
-  field: { gap: space.sm },
-  kinds: { flexDirection: "row", gap: space.sm },
-  kind: {
-    flex: 1,
-    minHeight: minTouch,
-    borderRadius: radius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  number: { fontVariant: ["tabular-nums"] },
-  currencies: { gap: space.xs },
-  currency: {
-    minHeight: 40,
-    minWidth: 52,
-    paddingHorizontal: space.md,
-    borderRadius: radius.sm,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  amount: { flex: 1, fontVariant: ["tabular-nums"] },
   note: { minHeight: 96, textAlignVertical: "top" },
 });

@@ -21,7 +21,17 @@ function AppStack() {
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="want/new" options={{ presentation: "modal" }} />
+        <Stack.Screen
+          name="want/new"
+          options={{
+            // Native bottom sheet on both platforms: system drag, detents and dismiss.
+            presentation: "formSheet",
+            sheetAllowedDetents: [0.7, 0.95],
+            sheetGrabberVisible: true,
+            sheetCornerRadius: 24,
+            contentStyle: { backgroundColor: colors.bg },
+          }}
+        />
         <Stack.Screen name="want/[id]" />
       </Stack>
     </>
