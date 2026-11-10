@@ -212,8 +212,8 @@ const styles = StyleSheet.create({
     paddingBottom: space.md,
     zIndex: 1,
   },
-  // Clip to bounds so scrolled content can never paint over the header.
-  scroll: { flex: 1, overflow: "hidden" },
+  // No overflow: "hidden" here: in an iOS form sheet it stopped the form painting at all.
+  scroll: { flex: 1 },
   body: { paddingHorizontal: gutter, paddingTop: space.sm, gap: space.xxl },
   // No lineHeight here: on iOS it shifts a single-line TextInput's text upward,
   // out of its box and into the header above. Height comes from padding instead.
