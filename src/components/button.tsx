@@ -1,72 +1,95 @@
-import FontAwesome from "@expo/vector-icons/FontAwesome";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, View, type PressableProps } from "react-native";
+import { useTheme } from "@/theme/theme";
+import { minTouch, radius, space, type ColorName } from "@/theme/tokens";
+import { Icon, type PhosphorIcon } from "./icon";
+import { Text } from "./text";
 
-type Props = {
+type Variant = "primary" | "secondary" | "plain" | "danger";
+
+interface ButtonProps extends Omit<PressableProps, "children" | "style"> {
   label: string;
-  theme?: "primary";
-  onPress?: () => void;
+  variant?: Variant;
+  icon?: PhosphorIcon;
+  /** Stretch to the container width. */
+  block?: boolean;
+}
+
+const looks: Record<Variant, { bg: ColorName | null; fg: ColorName }> = {
+  primary: { bg: "ink", fg: "bg" },
+  secondary: { bg: "surface", fg: "ink" },
+  plain: { bg: null, fg: "ink" },
+  danger: { bg: null, fg: "danger" },
 };
 
-const Button = ({ label, theme, onPress }: Props) => {
-  if (theme === "primary") {
-    return (
-      <View
-        style={[
-          styles.buttonContainer,
-          { borderWidth: 4, borderColor: "#ffd33d", borderRadius: 18 },
-        ]}
-      >
-        <Pressable
-          style={[styles.button, { backgroundColor: "#fff" }]}
-          onPress={onPress}
-        >
-          <FontAwesome
-            name="picture-o"
-            size={18}
-            color={"#25292e"}
-            style={styles.buttonIcon}
-          />
-          <Text style={[styles.buttonLabel, { color: "#25292e" }]}>
-            {label}
-          </Text>
-        </Pressable>
+/**
+ * Pressed state is a tonal change, never a scale or lift.
+ */
+export function Button({ label, variant = "primary", icon, block, disabled, ...rest }: ButtonProps) {
+  const { colors } = useTheme();
+  const look = looks[variant];
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ disabled: !!disabled }}
+      disabled={disabled}
+      style={({ pressed }) => [
+        styles.base,
+        block && styles.block,
+        { backgroundColor: look.bg ? colors[look.bg] : "transparent" },
+        disabled && styles.disabled,
+        pressed && (look.bg === "ink" ? styles.pressedSolid : { backgroundColor: colors.press }),
+      ]}
+      {...rest}
+    >
+      <View style={styles.row}>
+        {icon ? <Icon icon={icon} size={18} color={look.fg} weight="bold" /> : null}
+        <Text variant="label" color={look.fg}>
+          {label}
+        </Text>
       </View>
-    );
-  } else {
-    return (
-      <View style={styles.buttonContainer}>
-        <Pressable style={styles.button} onPress={onPress}>
-          <Text style={styles.buttonLabel}>{label}</Text>
-        </Pressable>
-      </View>
-    );
-  }
-};
+    </Pressable>
+  );
+}
 
-export default Button;
+interface IconButtonProps extends Omit<PressableProps, "children" | "style"> {
+  icon: PhosphorIcon;
+  /** Required: icon-only controls need a spoken name. */
+  accessibilityLabel: string;
+  color?: ColorName;
+}
+
+export function IconButton({ icon, color = "ink", ...rest }: IconButtonProps) {
+  const { colors } = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      hitSlop={4}
+      style={({ pressed }) => [styles.iconButton, pressed && { backgroundColor: colors.press }]}
+      {...rest}
+    >
+      <Icon icon={icon} color={color} />
+    </Pressable>
+  );
+}
 
 const styles = StyleSheet.create({
-  buttonContainer: {
-    width: 320,
-    height: 68,
-    marginHorizontal: 20,
+  base: {
+    minHeight: minTouch,
+    paddingHorizontal: space.xl,
+    borderRadius: radius.md,
     alignItems: "center",
     justifyContent: "center",
-    padding: 3,
+    alignSelf: "flex-start",
   },
-  button: {
-    borderRadius: 10,
-    width: "100%",
-    height: "100%",
+  block: { alignSelf: "stretch" },
+  row: { flexDirection: "row", alignItems: "center", gap: space.sm },
+  disabled: { opacity: 0.4 },
+  pressedSolid: { opacity: 0.85 },
+  iconButton: {
+    width: minTouch,
+    height: minTouch,
+    borderRadius: minTouch / 2,
     alignItems: "center",
     justifyContent: "center",
-    flexDirection: "row",
-  },
-  buttonIcon: {
-    paddingRight: 8,
-  },
-  buttonLabel: {
-    color: "#fff",
-    fontSize: 16,
   },
 });

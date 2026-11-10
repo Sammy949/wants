@@ -1,47 +1,33 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { Tabs } from "expo-router";
+import { ImagesIcon } from "phosphor-react-native/src/icons/Images";
+import { TagIcon } from "phosphor-react-native/src/icons/Tag";
+import { useTheme } from "@/theme/theme";
 
 export default function TabLayout() {
+  const { colors } = useTheme();
   return (
     <Tabs
       screenOptions={{
-        headerStyle: {
-          backgroundColor: "#25292e",
-        },
-        headerShadowVisible: false,
-        headerTintColor: "#fff",
-        tabBarInactiveTintColor: "#fff",
-        tabBarStyle: {
-          backgroundColor: "#25292e",
-        },
+        headerShown: false,
+        tabBarActiveTintColor: colors.ink,
+        tabBarInactiveTintColor: colors.muted,
+        tabBarStyle: { backgroundColor: colors.bg, borderTopColor: colors.line },
+        tabBarLabelStyle: { fontSize: 12, fontWeight: "600" },
+        sceneStyle: { backgroundColor: colors.bg },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? "home-sharp" : "home-outline"}
-              color={color}
-              size={24}
-            />
-          ),
+          title: "Wants",
+          tabBarIcon: ({ color, focused }) => <TagIcon color={color as string} size={24} weight={focused ? "fill" : "regular"} />,
         }}
       />
       <Tabs.Screen
-        name="about"
+        name="got"
         options={{
-          title: "About",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={
-                focused ? "information-circle" : "information-circle-outline"
-              }
-              color={color}
-              size={24}
-            />
-          ),
+          title: "Got",
+          tabBarIcon: ({ color, focused }) => <ImagesIcon color={color as string} size={24} weight={focused ? "fill" : "regular"} />,
         }}
       />
     </Tabs>
