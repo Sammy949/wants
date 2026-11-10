@@ -2,7 +2,7 @@
 
 Write down what you want: a thing to buy, a goal to hit, a place to go. When you get it, take a photo as proof and it moves to your Got wall.
 
-Built with Expo (SDK 57), Expo Router and TypeScript. Data stays on the device.
+Built with Expo (SDK 58), Expo Router and TypeScript. Data stays on the device.
 
 ## Run it
 
