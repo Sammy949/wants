@@ -3,11 +3,13 @@ import { router, useLocalSearchParams } from "expo-router";
 import { ArrowCounterClockwiseIcon } from "phosphor-react-native/src/icons/ArrowCounterClockwise";
 import { CaretLeftIcon } from "phosphor-react-native/src/icons/CaretLeft";
 import { PencilSimpleIcon } from "phosphor-react-native/src/icons/PencilSimple";
-import { useState } from "react";
-import { Alert, Linking, ScrollView, StyleSheet, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { AccessibilityInfo, Alert, Linking, ScrollView, StyleSheet, View, type ScrollViewInstance } from "react-native";
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, IconButton } from "@/components/button";
 import { GotFlow } from "@/components/got-flow";
+import { GotStamp } from "@/components/got-stamp";
 import { wantMeta } from "@/components/tag-card";
 import { Text } from "@/components/text";
 import { deletePhotos, photoUri, savePhoto } from "@/data/photos";
@@ -29,6 +31,24 @@ export default function WantScreen() {
   const [choosing, setChoosing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  // True only right after marking as got on this screen, so the moment plays once.
+  const [justGot, setJustGot] = useState(false);
+  const scrollRef = useRef<ScrollViewInstance>(null);
+  const reduceMotion = useReducedMotion();
+  const photoScale = useSharedValue(1);
+  const photoStyle = useAnimatedStyle(() => ({ transform: [{ scale: photoScale.get() }] }));
+
+  const celebrating = justGot && !!want?.gotAt;
+  useEffect(() => {
+    if (!celebrating) return;
+    // Bring the photo and stamp into view; the got flow was further down.
+    scrollRef.current?.scrollTo({ y: 0, animated: !reduceMotion });
+    AccessibilityInfo.announceForAccessibility("Marked as got.");
+    if (!reduceMotion) {
+      photoScale.set(0.94);
+      photoScale.set(withSpring(1, { dampingRatio: 1, duration: 520 }));
+    }
+  }, [celebrating, reduceMotion, photoScale]);
 
   async function markGot(source: PhotoSource | null, paid: Price | null) {
     setMessage(null);
@@ -51,6 +71,7 @@ export default function WantScreen() {
       setBusy(true);
       await repo.markGot(wantId, { proofPhoto: saved, paid });
       setChoosing(false);
+      setJustGot(true);
     } catch {
       // Don't leave a copied photo behind if the database write failed.
       if (saved) deletePhotos([saved]);
@@ -67,6 +88,7 @@ export default function WantScreen() {
         text: "Move back",
         style: "destructive",
         onPress: async () => {
+          setJustGot(false);
           const { removedPhoto } = await repo.unmarkGot(wantId);
           if (removedPhoto) deletePhotos([removedPhoto]);
         },
@@ -120,17 +142,25 @@ export default function WantScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       {back}
-      <ScrollView contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxxl }]}>
+      <ScrollView ref={scrollRef} contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxxl }]}>
         {want.gotAt && want.proofPhoto ? (
-          <Image
-            source={{ uri: photoUri(want.proofPhoto) }}
-            style={[styles.photo, { backgroundColor: colors.surface }]}
-            contentFit="cover"
-            accessibilityLabel={`Photo of ${want.title}`}
-          />
+          <Animated.View style={photoStyle}>
+            <Image
+              source={{ uri: photoUri(want.proofPhoto) }}
+              style={[styles.photo, { backgroundColor: colors.surface }]}
+              contentFit="cover"
+              accessibilityLabel={`Photo of ${want.title}`}
+            />
+          </Animated.View>
         ) : null}
 
         <View style={styles.head}>
+          {want.gotAt ? (
+            <View style={styles.gotRow}>
+              <GotStamp celebrate={celebrating} />
+              <Text variant="label">Got {formatDay(want.gotAt)}</Text>
+            </View>
+          ) : null}
           <Text variant="display" accessibilityRole="header">
             {want.title}
           </Text>
@@ -154,9 +184,7 @@ export default function WantScreen() {
               ) : null}
             </View>
           ) : null}
-          <Text variant="meta">
-            {want.gotAt ? `Got ${formatDay(want.gotAt)} · ${wantMeta(want)}` : wantMeta(want)}
-          </Text>
+          <Text variant="meta">{wantMeta(want)}</Text>
         </View>
 
         {want.note ? <Text variant="body">{want.note}</Text> : null}
@@ -202,6 +230,7 @@ const styles = StyleSheet.create({
   body: { paddingHorizontal: gutter, paddingTop: space.sm, gap: space.xl },
   photo: { width: "100%", aspectRatio: 4 / 5, borderRadius: radius.lg },
   head: { gap: space.sm },
+  gotRow: { flexDirection: "row", alignItems: "center", gap: space.md, marginBottom: space.xs },
   amounts: { flexDirection: "row", gap: space.xxl },
   amount: { gap: 2 },
   price: { fontSize: 20, lineHeight: 26 },
