@@ -14,3 +14,20 @@ export function formatDay(isoTimestamp: string, locale?: string): string {
   if (Number.isNaN(date.getTime())) return "";
   return new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", year: "numeric" }).format(date);
 }
+
+/** A picked Date to a stored calendar day, using the phone's local date. */
+export function toIsoDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+/**
+ * A stored calendar day to a local Date for the picker. Noon, so a daylight
+ * saving shift can never move it to the previous or next day.
+ */
+export function fromIsoDate(isoDate: string): Date {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  return new Date(y, (m ?? 1) - 1, d ?? 1, 12);
+}

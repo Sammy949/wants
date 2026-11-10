@@ -1,4 +1,4 @@
-import { formatDay, formatTargetDate } from "./dates";
+import { formatDay, formatTargetDate, fromIsoDate, toIsoDate } from "./dates";
 
 describe("formatTargetDate", () => {
   it("formats month and year without timezone drift", () => {
@@ -19,5 +19,18 @@ describe("formatDay", () => {
 
   it("returns empty for garbage", () => {
     expect(formatDay("nope")).toBe("");
+  });
+});
+
+describe("toIsoDate / fromIsoDate", () => {
+  it("round-trips calendar days, including month and year ends", () => {
+    for (const day of ["2026-01-01", "2026-03-29", "2026-10-25", "2026-12-31", "2028-02-29"]) {
+      expect(toIsoDate(fromIsoDate(day))).toBe(day);
+    }
+  });
+
+  it("uses the local date of a picked Date", () => {
+    expect(toIsoDate(new Date(2027, 7, 1, 23, 59))).toBe("2027-08-01");
+    expect(toIsoDate(new Date(2027, 7, 1, 0, 1))).toBe("2027-08-01");
   });
 });
