@@ -13,6 +13,8 @@ interface AmountFieldProps {
   /** Spoken name, e.g. "Budget". */
   label: string;
   placeholder?: string;
+  /** Field colour: "bg" inside a card (default), "surface" when placed on the page. */
+  fill?: "bg" | "surface";
 }
 
 /** Currency dropdown plus a number field. Raw text; the caller parses on save. */
@@ -23,13 +25,14 @@ export function AmountField({
   onChangeCurrency,
   label,
   placeholder = "0",
+  fill = "bg",
 }: AmountFieldProps) {
   const { colors } = useTheme();
   const [listOpen, setListOpen] = useState(false);
   return (
     <View style={styles.wrap}>
       <View style={styles.row}>
-        <CurrencyButton value={currency} open={listOpen} onPress={() => setListOpen((o) => !o)} />
+        <CurrencyButton value={currency} open={listOpen} fill={fill} onPress={() => setListOpen((o) => !o)} />
         <TextInput
           value={amount}
           onChangeText={onChangeAmount}
@@ -37,11 +40,12 @@ export function AmountField({
           placeholderTextColor={colors.muted}
           keyboardType="decimal-pad"
           accessibilityLabel={`${label} in ${currency}`}
-          style={[styles.input, { backgroundColor: colors.bg, color: colors.ink }]}
+          style={[styles.input, { backgroundColor: colors[fill], color: colors.ink }]}
         />
       </View>
       {listOpen ? (
         <CurrencyList
+          fill={fill}
           value={currency}
           onSelect={(code) => {
             onChangeCurrency(code);

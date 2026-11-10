@@ -11,10 +11,11 @@ interface CurrencyButtonProps {
   value: CurrencyCode;
   open: boolean;
   onPress: () => void;
+  fill?: "bg" | "surface";
 }
 
 /** The closed dropdown: symbol and code. */
-export function CurrencyButton({ value, open, onPress }: CurrencyButtonProps) {
+export function CurrencyButton({ value, open, onPress, fill = "bg" }: CurrencyButtonProps) {
   const { colors } = useTheme();
   const info = CURRENCY_INFO[value];
   return (
@@ -25,7 +26,7 @@ export function CurrencyButton({ value, open, onPress }: CurrencyButtonProps) {
       accessibilityLabel={`Currency, ${info.name}`}
       style={({ pressed }) => [
         styles.button,
-        { backgroundColor: colors.bg },
+        { backgroundColor: colors[fill] },
         pressed && { backgroundColor: colors.press },
       ]}
     >
@@ -41,13 +42,14 @@ export function CurrencyButton({ value, open, onPress }: CurrencyButtonProps) {
 interface CurrencyListProps {
   value: CurrencyCode;
   onSelect: (code: CurrencyCode) => void;
+  fill?: "bg" | "surface";
 }
 
 /** The open dropdown: every currency with its symbol and name. */
-export function CurrencyList({ value, onSelect }: CurrencyListProps) {
+export function CurrencyList({ value, onSelect, fill = "bg" }: CurrencyListProps) {
   const { colors } = useTheme();
   return (
-    <View accessibilityRole="radiogroup" accessibilityLabel="Currency" style={[styles.list, { backgroundColor: colors.bg }]}>
+    <View accessibilityRole="radiogroup" accessibilityLabel="Currency" style={[styles.list, { backgroundColor: colors[fill] }]}>
       {CURRENCIES.map((code) => {
         const selected = code === value;
         const info = CURRENCY_INFO[code];
