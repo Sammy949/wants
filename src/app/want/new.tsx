@@ -88,26 +88,30 @@ export default function NewWantSheet() {
   const field = { backgroundColor: colors.bg, color: colors.ink };
 
   return (
-    <View style={[styles.sheet, { backgroundColor: colors.bg }]}>
-      {/* iOS draws its own grabber; Android's sheet doesn't, so draw one. */}
-      {Platform.OS === "android" ? <View style={[styles.handle, { backgroundColor: colors.line }]} /> : null}
-
-      {/* Opaque and stacked above the form, so Save stays tappable whatever the scroll view does. */}
-      <View style={[styles.bar, { backgroundColor: colors.bg }]}>
-        <Text variant="heading" accessibilityRole="header">
-          New want
-        </Text>
-        <Button label="Save" onPress={save} disabled={saving || !title.trim()} />
+    // The ScrollView must be the sheet's root. On iOS, react-native-screens finds the
+    // first ScrollView in a form sheet and forces its frame to the whole sheet
+    // (RNSScreen.mm, applyFrameCorrectionForDescendantScrollView). With a header
+    // beside it, that stretched the ScrollView over the header. As the root, being
+    // sized to the sheet is exactly right. The header is a sticky first child.
+    <ScrollView
+      style={[styles.sheet, { backgroundColor: colors.bg }]}
+      contentContainerStyle={{ paddingBottom: insets.bottom + space.xxl }}
+      stickyHeaderIndices={[0]}
+      keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
+    >
+      <View style={{ backgroundColor: colors.bg }}>
+        {/* iOS draws its own grabber; Android's sheet doesn't, so draw one. */}
+        {Platform.OS === "android" ? <View style={[styles.handle, { backgroundColor: colors.line }]} /> : null}
+        <View style={styles.bar}>
+          <Text variant="heading" accessibilityRole="header">
+            New want
+          </Text>
+          <Button label="Save" onPress={save} disabled={saving || !title.trim()} />
+        </View>
       </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + space.xxl }]}
-        keyboardShouldPersistTaps="handled"
-        // No automaticallyAdjustKeyboardInsets: inside an iOS form sheet it fights the
-        // sheet's own keyboard handling and pushed this scroll view over the header.
-        contentInsetAdjustmentBehavior="never"
-      >
+      <View style={styles.body}>
         <TextInput
           value={title}
           onChangeText={setTitle}
@@ -195,8 +199,8 @@ export default function NewWantSheet() {
             {error}
           </Text>
         ) : null}
-      </ScrollView>
-    </View>
+      </View>
+    </ScrollView>
   );
 }
 
@@ -210,13 +214,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: gutter,
     paddingTop: space.lg,
     paddingBottom: space.md,
-    zIndex: 1,
   },
-  // No overflow: "hidden" here: in an iOS form sheet it stopped the form painting at all.
-  scroll: { flex: 1 },
   body: { paddingHorizontal: gutter, paddingTop: space.sm, gap: space.xxl },
-  // No lineHeight here: on iOS it shifts a single-line TextInput's text upward,
-  // out of its box and into the header above. Height comes from padding instead.
+  // No lineHeight: it misplaces single-line TextInput text on iOS. Height comes from padding.
   title: { fontFamily: fonts.display500, fontSize: 24, minHeight: 56, paddingVertical: space.md },
   group: { gap: space.sm },
   optional: { gap: space.sm },
