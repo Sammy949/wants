@@ -14,6 +14,7 @@ import { GotStamp } from "@/components/got-stamp";
 import { wantMeta } from "@/components/tag-card";
 import { Text } from "@/components/text";
 import { deletePhotos, photoUri, savePhoto } from "@/data/photos";
+import { pendingGotStore } from "@/data/pending-store";
 import { useLiveQuery, useWantsRepo } from "@/data/provider";
 import { PRICE_LABEL, type Price } from "@/data/wants";
 import { formatDay } from "@/lib/dates";
@@ -23,7 +24,8 @@ import { useTheme } from "@/theme/theme";
 import { gutter, radius, space } from "@/theme/tokens";
 
 export default function WantScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  // got=1 arrives when a got interrupted by Android was finished on relaunch.
+  const { id, got } = useLocalSearchParams<{ id: string; got?: string }>();
   const wantId = Number(id);
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -33,7 +35,7 @@ export default function WantScreen() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   // True only right after marking as got on this screen, so the moment plays once.
-  const [justGot, setJustGot] = useState(false);
+  const [justGot, setJustGot] = useState(got === "1");
   const scrollRef = useRef<ScrollViewInstance>(null);
   const reduceMotion = useReducedMotion();
   const photoScale = useSharedValue(1);
@@ -56,7 +58,11 @@ export default function WantScreen() {
     let saved: string | null = null;
     try {
       if (source) {
-        const picked = await pickPhoto(source);
+        // If Android kills the app while the picker is open, this note lets the
+        // next launch finish the job (see data/pending-got.ts).
+        // A safety net only: failing to write it must not block marking.
+        await pendingGotStore.save({ wantId, paid, startedAt: new Date().toISOString() }).catch(() => {});
+        const picked = await pickPhoto(source).finally(() => pendingGotStore.clear().catch(() => {}));
         if (picked.status === "cancelled") return;
         if (picked.status === "denied") {
           setMessage(

@@ -9,6 +9,7 @@ import { Screen } from "@/components/screen";
 import { TagCard } from "@/components/tag-card";
 import { Text } from "@/components/text";
 import { useLiveQuery } from "@/data/provider";
+import { useRecoverPendingGot } from "@/data/use-recover-pending-got";
 import type { WantKind } from "@/data/wants";
 import { gutter, space } from "@/theme/tokens";
 
@@ -20,6 +21,8 @@ const FILTERS: { key: WantKind | "all"; label: string }[] = [
 ];
 
 export default function WantsScreen() {
+  // First screen after launch: finish any got that Android interrupted.
+  useRecoverPendingGot();
   const [filter, setFilter] = useState<WantKind | "all">("all");
   const wants = useLiveQuery("wanting", (repo) => repo.listWanting());
   const stats = useLiveQuery("stats", (repo) => repo.stats());
