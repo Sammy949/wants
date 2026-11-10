@@ -207,6 +207,20 @@ export function createWantsRepo(db: Db, clock: Clock = systemClock) {
       return mustGet(id);
     },
 
+    /** Correct what was paid on a want that's already got. Null clears it. */
+    async setPaid(id: number, paid: Price | null): Promise<Want> {
+      const before = await mustGet(id);
+      if (!before.gotAt) throw new Error("Only a got want has a paid amount.");
+      if (paid && !validPrice(paid)) throw new WantValidationError("That amount isn't valid.");
+      await db.runAsync("UPDATE wants SET paid_minor = ?, paid_currency = ?, updated_at = ? WHERE id = ?", [
+        paid?.minor ?? null,
+        paid?.currency ?? null,
+        now(),
+        id,
+      ]);
+      return mustGet(id);
+    },
+
     /** Move back to wanting. Returns the proof photo that is no longer referenced. */
     async unmarkGot(id: number): Promise<{ want: Want; removedPhoto: string | null }> {
       const before = await mustGet(id);

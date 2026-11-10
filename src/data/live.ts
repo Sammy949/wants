@@ -24,7 +24,7 @@ export function createChangeBus() {
 
 export type ChangeBus = ReturnType<typeof createChangeBus>;
 
-const WRITES = ["create", "update", "markGot", "unmarkGot", "remove"] as const;
+const WRITES = ["create", "update", "markGot", "setPaid", "unmarkGot", "remove"] as const;
 
 /** Wrap a repo so every successful write emits on the bus. */
 export function withNotify(repo: WantsRepo, bus: ChangeBus): WantsRepo {

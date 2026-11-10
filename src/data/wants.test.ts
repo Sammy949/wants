@@ -160,7 +160,17 @@ describe("wants repo", () => {
     expect((await repo.get(a.id))!.gotAt).toBeNull();
   });
 
-  it("remembers the last currency used", async () => {
+  it("corrects or clears the paid amount on a got want", async () => {
+    const { repo } = await setup();
+    const a = await repo.create({ title: "A", kind: "thing" });
+    await expect(repo.setPaid(a.id, { minor: 100, currency: "NGN" })).rejects.toThrow(/got/);
+    await repo.markGot(a.id, { paid: { minor: 100, currency: "NGN" } });
+    expect((await repo.setPaid(a.id, { minor: 250, currency: "USD" })).paid).toEqual({ minor: 250, currency: "USD" });
+    expect((await repo.setPaid(a.id, null)).paid).toBeNull();
+    await expect(repo.setPaid(a.id, { minor: -5, currency: "NGN" })).rejects.toThrow(WantValidationError);
+  });
+
+    it("remembers the last currency used", async () => {
     const { repo } = await setup();
     expect(await repo.lastCurrency()).toBeNull();
     await repo.create({ title: "A", kind: "thing", price: { minor: 100, currency: "USD" } });
