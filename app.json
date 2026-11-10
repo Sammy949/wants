@@ -35,7 +35,14 @@
       "expo-font",
       "expo-image",
       "expo-status-bar",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "wants uses your photos so you can add a picture of something you got.",
+          "cameraPermission": "wants uses the camera so you can take a photo of something you got."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
