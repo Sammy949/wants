@@ -1,8 +1,9 @@
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
-import { ArrowCounterClockwiseIcon } from "phosphor-react-native/src/icons/ArrowCounterClockwise";
+import { ArrowUUpLeftIcon } from "phosphor-react-native/src/icons/ArrowUUpLeft";
 import { CaretLeftIcon } from "phosphor-react-native/src/icons/CaretLeft";
 import { PencilSimpleIcon } from "phosphor-react-native/src/icons/PencilSimple";
+import { RepeatIcon } from "phosphor-react-native/src/icons/Repeat";
 import { useEffect, useRef, useState } from "react";
 import { AccessibilityInfo, Alert, Linking, ScrollView, StyleSheet, View, type ScrollViewInstance } from "react-native";
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from "react-native-reanimated";
@@ -81,19 +82,36 @@ export default function WantScreen() {
     }
   }
 
-  function confirmUnmark() {
-    Alert.alert("Move back to wants?", "The proof photo will be deleted.", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Move back",
-        style: "destructive",
-        onPress: async () => {
-          setJustGot(false);
-          const { removedPhoto } = await repo.unmarkGot(wantId);
-          if (removedPhoto) deletePhotos([removedPhoto]);
-        },
-      },
-    ]);
+  /**
+   * Undo is only offered right after marking, for a mistaken tap. A want that
+   * was really got stays got; wanting it again makes a new want (below).
+   */
+  async function undoGot() {
+    setJustGot(false);
+    try {
+      const { removedPhoto } = await repo.unmarkGot(wantId);
+      if (removedPhoto) deletePhotos([removedPhoto]);
+      AccessibilityInfo.announceForAccessibility("Moved back to wants.");
+    } catch {
+      setMessage("Couldn't undo that. Try again.");
+    }
+  }
+
+  /** A fresh want with the same details. The got one keeps its photo and date. */
+  async function wantAgain() {
+    if (!want) return;
+    try {
+      const again = await repo.create({
+        title: want.title,
+        kind: want.kind,
+        price: want.price,
+        note: want.note,
+        category: want.category,
+      });
+      router.replace(`/want/${again.id}`);
+    } catch {
+      setMessage("Couldn't add it again. Try again.");
+    }
   }
 
   function confirmDelete() {
@@ -158,7 +176,10 @@ export default function WantScreen() {
           {want.gotAt ? (
             <View style={styles.gotRow}>
               <GotStamp celebrate={celebrating} />
-              <Text variant="label">Got {formatDay(want.gotAt)}</Text>
+              <Text variant="label" style={styles.gotLabel}>
+                Got {formatDay(want.gotAt)}
+              </Text>
+              {justGot ? <Button label="Undo" variant="plain" icon={ArrowUUpLeftIcon} onPress={undoGot} /> : null}
             </View>
           ) : null}
           <Text variant="display" accessibilityRole="header">
@@ -202,12 +223,7 @@ export default function WantScreen() {
 
         {want.gotAt ? (
           <View style={styles.actions}>
-            <Button
-              label="Move back to wants"
-              variant="secondary"
-              icon={ArrowCounterClockwiseIcon}
-              onPress={confirmUnmark}
-            />
+            <Button label="Want it again" variant="secondary" icon={RepeatIcon} onPress={wantAgain} />
           </View>
         ) : choosing ? (
           <GotFlow want={want} busy={busy} onConfirm={markGot} onCancel={() => setChoosing(false)} />
@@ -231,6 +247,7 @@ const styles = StyleSheet.create({
   photo: { width: "100%", aspectRatio: 4 / 5, borderRadius: radius.lg },
   head: { gap: space.sm },
   gotRow: { flexDirection: "row", alignItems: "center", gap: space.md, marginBottom: space.xs },
+  gotLabel: { flex: 1 },
   amounts: { flexDirection: "row", gap: space.xxl },
   amount: { gap: 2 },
   price: { fontSize: 20, lineHeight: 26 },
