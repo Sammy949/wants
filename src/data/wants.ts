@@ -203,6 +203,15 @@ export function createWantsRepo(db: Db, clock: Clock = systemClock) {
       return [before.referencePhoto, before.proofPhoto].filter((p): p is string => p !== null);
     },
 
+    /** Currency of the most recently created priced want, to default the picker. */
+    async lastCurrency(): Promise<CurrencyCode | null> {
+      const row = await db.getFirstAsync<{ currency: string }>(
+        "SELECT currency FROM wants WHERE currency IS NOT NULL ORDER BY created_at DESC, id DESC LIMIT 1",
+        [],
+      );
+      return row && isCurrencyCode(row.currency) ? row.currency : null;
+    },
+
     async stats(year: number = clock().getFullYear()) {
       const counts = await db.getFirstAsync<{ wanting: number; got: number; got_this_year: number }>(
         `SELECT

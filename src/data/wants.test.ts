@@ -136,6 +136,16 @@ describe("wants repo", () => {
     });
   });
 
+  it("remembers the last currency used", async () => {
+    const { repo } = await setup();
+    expect(await repo.lastCurrency()).toBeNull();
+    await repo.create({ title: "A", kind: "thing", price: { minor: 100, currency: "USD" } });
+    await repo.create({ title: "B", kind: "goal" });
+    expect(await repo.lastCurrency()).toBe("USD");
+    await repo.create({ title: "C", kind: "thing", price: { minor: 100, currency: "GBP" } });
+    expect(await repo.lastCurrency()).toBe("GBP");
+  });
+
   it("returns zeroed stats on an empty database", async () => {
     const { repo } = await setup();
     expect(await repo.stats(2026)).toEqual({ wanting: 0, got: 0, gotThisYear: 0, stillWanted: [] });
