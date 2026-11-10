@@ -1,4 +1,4 @@
-import { formatMoney, isCurrencyCode, minorDigits, parseAmount } from "./money";
+import { CURRENCIES, CURRENCY_INFO, formatMoney, isCurrencyCode, minorDigits, parseAmount } from "./money";
 
 describe("minorDigits", () => {
   it("knows two-decimal and zero-decimal currencies", () => {
@@ -60,5 +60,14 @@ describe("isCurrencyCode", () => {
   it("accepts supported codes only", () => {
     expect(isCurrencyCode("NGN")).toBe(true);
     expect(isCurrencyCode("XYZ")).toBe(false);
+  });
+});
+
+describe("CURRENCY_INFO", () => {
+  it("has a symbol and name for every supported currency", () => {
+    for (const code of CURRENCIES) {
+      expect(CURRENCY_INFO[code].symbol).toBeTruthy();
+      expect(CURRENCY_INFO[code].name).toBeTruthy();
+    }
   });
 });

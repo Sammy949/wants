@@ -6,6 +6,22 @@
 export const CURRENCIES = ["NGN", "USD", "EUR", "GBP", "JPY", "GHS", "KES", "ZAR", "CAD"] as const;
 export type CurrencyCode = (typeof CURRENCIES)[number];
 
+/**
+ * Fixed labels for the currency picker. Hard-coded rather than read from Intl
+ * so they look the same on every engine (Hermes and Node disagree on some).
+ */
+export const CURRENCY_INFO: Record<CurrencyCode, { symbol: string; name: string }> = {
+  NGN: { symbol: "₦", name: "Nigerian naira" },
+  USD: { symbol: "$", name: "US dollar" },
+  EUR: { symbol: "€", name: "Euro" },
+  GBP: { symbol: "£", name: "British pound" },
+  JPY: { symbol: "¥", name: "Japanese yen" },
+  GHS: { symbol: "GH₵", name: "Ghanaian cedi" },
+  KES: { symbol: "KSh", name: "Kenyan shilling" },
+  ZAR: { symbol: "R", name: "South African rand" },
+  CAD: { symbol: "CA$", name: "Canadian dollar" },
+};
+
 export function isCurrencyCode(value: string): value is CurrencyCode {
   return (CURRENCIES as readonly string[]).includes(value);
 }
