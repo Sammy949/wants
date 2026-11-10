@@ -1,5 +1,8 @@
 import { router } from "expo-router";
 import { ScrollView, StyleSheet, View } from "react-native";
+import { Button } from "@/components/button";
+import { EmptyState } from "@/components/empty-state";
+import { EmptyGotArt } from "@/components/illustrations";
 import { PhotoTile } from "@/components/photo-tile";
 import { Screen } from "@/components/screen";
 import { Text } from "@/components/text";
@@ -33,12 +36,12 @@ export default function GotScreen() {
       </View>
 
       {got.data !== undefined && items.length === 0 ? (
-        <View style={styles.empty}>
-          <Text variant="heading">Nothing got yet.</Text>
-          <Text variant="body" color="muted" style={styles.emptyBody}>
-            When you get something, open it and tap I got it. Its photo ends up here.
-          </Text>
-        </View>
+        <EmptyState
+          art={<EmptyGotArt />}
+          title="Nothing got yet"
+          body="When you get something, open it and tap I got it. Its photo lands here."
+          action={<Button label="See your wants" variant="secondary" onPress={() => router.navigate("/")} />}
+        />
       ) : (
         <ScrollView contentContainerStyle={styles.grid}>
           {first ? (
@@ -71,6 +74,4 @@ const styles = StyleSheet.create({
   rows: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: space.md },
   // Two columns: half the row minus half the gap.
   cell: { width: "48.3%", aspectRatio: 3 / 4 },
-  empty: { paddingHorizontal: gutter, paddingTop: space.xxxl, gap: space.md },
-  emptyBody: { maxWidth: 320 },
 });

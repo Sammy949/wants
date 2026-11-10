@@ -4,6 +4,8 @@ import { useState } from "react";
 import { FlatList, Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "@/components/button";
+import { EmptyState } from "@/components/empty-state";
+import { EmptyWantsArt } from "@/components/illustrations";
 import { Screen } from "@/components/screen";
 import { TagCard } from "@/components/tag-card";
 import { Text } from "@/components/text";
@@ -51,13 +53,12 @@ export default function WantsScreen() {
       </View>
 
       {empty ? (
-        <View style={styles.empty}>
-          <Text variant="heading">Nothing here yet.</Text>
-          <Text variant="body" color="muted" style={styles.emptyBody}>
-            A thing to buy, a goal to hit, a place to go. Write the first one down.
-          </Text>
-          <Button label="New want" icon={PlusIcon} onPress={() => router.push("/want/new")} />
-        </View>
+        <EmptyState
+          art={<EmptyWantsArt />}
+          title="Nothing here yet"
+          body="A thing to buy, a goal to hit, a place to go. Write the first one down."
+          action={<Button label="New want" icon={PlusIcon} onPress={() => router.push("/want/new")} />}
+        />
       ) : (
         <>
           <View style={styles.filters} accessibilityRole="tablist">
@@ -120,8 +121,6 @@ const styles = StyleSheet.create({
   filterText: { fontSize: 15 },
   list: { paddingHorizontal: gutter },
   filterEmpty: { paddingTop: space.xl },
-  empty: { flex: 1, paddingHorizontal: gutter, paddingTop: space.xxxl, gap: space.md, alignItems: "flex-start" },
-  emptyBody: { maxWidth: 320, marginBottom: space.sm },
   fab: { position: "absolute", bottom: space.lg },
   // Tight, directional, ink-tinted: just enough to lift the button off the list.
   fabShadow: {
