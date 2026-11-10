@@ -1,5 +1,10 @@
+import { DataProvider } from "@/data/provider";
 import { Stack } from "expo-router";
 
 export default function RootLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <DataProvider>
+      <Stack screenOptions={{ headerShown: false }} />
+    </DataProvider>
+  );
 }
