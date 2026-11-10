@@ -40,7 +40,7 @@ export function UndoBar({ message, onUndo }: UndoBarProps) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { paddingHorizontal: gutter, paddingTop: space.sm },
+  wrap: { paddingHorizontal: gutter, paddingTop: space.sm, paddingBottom: space.xs },
   bar: {
     minHeight: minTouch,
     borderRadius: radius.md,

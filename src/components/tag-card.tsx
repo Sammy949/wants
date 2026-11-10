@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View, type LayoutChangeEvent } from "react-nativ
 import Svg, { Path } from "react-native-svg";
 import { PRICE_LABEL, type Want } from "@/data/wants";
 import { formatTargetDate } from "@/lib/dates";
+import { menuHaptic } from "@/lib/haptics";
 import { formatMoney } from "@/lib/money";
 import { useTheme } from "@/theme/theme";
 import { space } from "@/theme/tokens";
@@ -21,13 +22,15 @@ export function wantMeta(want: Want): string {
 interface TagCardProps {
   want: Want;
   onPress?: () => void;
+  /** Opens the want's actions. Plays the menu haptic when the press is recognised. */
+  onLongPress?: () => void;
 }
 
 /**
  * A want, drawn as a price tag. The shape is an SVG sized from layout; the
  * content never waits for it, so the card reads fine on the first frame.
  */
-export function TagCard({ want, onPress }: TagCardProps) {
+export function TagCard({ want, onPress, onLongPress }: TagCardProps) {
   const { colors } = useTheme();
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
   const price = want.price ? formatMoney(want.price.minor, want.price.currency) : null;
@@ -41,6 +44,17 @@ export function TagCard({ want, onPress }: TagCardProps) {
   return (
     <Pressable
       onPress={onPress}
+      onLongPress={
+        onLongPress
+          ? () => {
+              menuHaptic();
+              onLongPress();
+            }
+          : undefined
+      }
+      delayLongPress={400}
+      accessibilityActions={onLongPress ? [{ name: "longpress", label: "Show actions" }] : undefined}
+      onAccessibilityAction={(e) => e.nativeEvent.actionName === "longpress" && onLongPress?.()}
       onLayout={onLayout}
       accessibilityRole="button"
       accessibilityLabel={[want.title, price && `${PRICE_LABEL[want.kind]} ${price}`, meta].filter(Boolean).join(", ")}

@@ -2,7 +2,15 @@ import * as Haptics from "expo-haptics";
 import { Platform } from "react-native";
 
 /**
- * The one haptic in the app: something you wanted is now got.
+ * The "pop" when a long-press opens an item's actions, as with iOS context
+ * menus. Fires on recognition, not release, so it confirms the press landed.
+ */
+export function menuHaptic(): void {
+  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+}
+
+/**
+ * The got haptic: something you wanted is now got.
  * Kept to this single moment so it stays meaningful (Apple's "utility" rule).
  *
  * Android uses the system Confirm haptic, which feels native and needs no

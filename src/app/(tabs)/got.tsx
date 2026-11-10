@@ -1,17 +1,21 @@
 import { router } from "expo-router";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { Button } from "@/components/button";
+import { useDelete } from "@/components/delete-provider";
 import { EmptyState } from "@/components/empty-state";
 import { EmptyGotArt } from "@/components/illustrations";
 import { PhotoTile } from "@/components/photo-tile";
 import { Screen } from "@/components/screen";
 import { TabHeader } from "@/components/tab-header";
+import { UndoBar } from "@/components/undo-bar";
 import { useLiveQuery } from "@/data/provider";
 import { gutter, space } from "@/theme/tokens";
 
 export default function GotScreen() {
   const got = useLiveQuery("got", (repo) => repo.listGot());
-  const items = got.data ?? [];
+  const deletion = useDelete();
+  // Hidden while their Undo window runs.
+  const items = (got.data ?? []).filter((w) => !deletion.pendingIds.has(w.id));
   const [first, ...rest] = items;
 
   return (
@@ -37,6 +41,7 @@ export default function GotScreen() {
           </View>
         </ScrollView>
       )}
+      {deletion.lastTitle ? <UndoBar message={`Deleted ${deletion.lastTitle}`} onUndo={deletion.undo} /> : null}
     </Screen>
   );
 }

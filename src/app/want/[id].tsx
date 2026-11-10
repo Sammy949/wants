@@ -34,9 +34,10 @@ function Fact({ label, value }: { label: string; value: string }) {
  */
 export default function WantScreen() {
   // got=1 arrives when a got interrupted by Android was finished on relaunch.
-  const { id, got } = useLocalSearchParams<{ id: string; got?: string }>();
+  // choose=1 arrives from the actions sheet's "I got it".
+  const { id, got, choose } = useLocalSearchParams<{ id: string; got?: string; choose?: string }>();
   const { colors } = useTheme();
-  const detail = useWantDetail(Number(id), { startCelebrating: got === "1" });
+  const detail = useWantDetail(Number(id), { startCelebrating: got === "1", startChoosing: choose === "1" });
   const { want, celebrating } = detail;
 
   const scrollRef = useRef<ScrollViewInstance>(null);

@@ -23,7 +23,7 @@ export function TopBar({ detail }: { detail: WantDetail }) {
       {detail.want ? (
         <View style={styles.right}>
           <IconButton icon={PencilSimpleIcon} accessibilityLabel="Edit" onPress={detail.edit} />
-          <IconButton icon={TrashIcon} color="danger" accessibilityLabel="Delete" onPress={detail.confirmDelete} />
+          <IconButton icon={TrashIcon} color="danger" accessibilityLabel="Delete" onPress={detail.deleteWant} />
         </View>
       ) : null}
     </View>

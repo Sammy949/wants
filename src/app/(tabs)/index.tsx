@@ -7,10 +7,9 @@ import { EmptyState } from "@/components/empty-state";
 import { EmptyWantsArt } from "@/components/illustrations";
 import { Screen } from "@/components/screen";
 import { TabHeader } from "@/components/tab-header";
-import { SwipeToDelete } from "@/components/swipe-to-delete";
 import { TagCard } from "@/components/tag-card";
 import { UndoBar } from "@/components/undo-bar";
-import { useUndoableDelete } from "@/components/use-undoable-delete";
+import { useDelete } from "@/components/delete-provider";
 import { Text } from "@/components/text";
 import { useLiveQuery } from "@/data/provider";
 import { useRecoverPendingGot } from "@/data/use-recover-pending-got";
@@ -31,7 +30,7 @@ export default function WantsScreen() {
   const { colors } = useTheme();
   const [filter, setFilter] = useState<WantKind | "all">("all");
   const wants = useLiveQuery("wanting", (repo) => repo.listWanting());
-  const deletion = useUndoableDelete();
+  const deletion = useDelete();
 
   // Wants waiting out their Undo window are already gone from the user's view.
   const visible = (wants.data ?? []).filter((w) => !deletion.pendingIds.has(w.id));
@@ -73,10 +72,13 @@ export default function WantsScreen() {
             data={list}
             keyExtractor={(w) => String(w.id)}
             renderItem={({ item }) => (
-              <SwipeToDelete label={item.title} onDelete={() => deletion.remove(item.id, item.title)}>
-                <TagCard want={item} onPress={() => router.push(`/want/${item.id}`)} />
-              </SwipeToDelete>
+              <TagCard
+                want={item}
+                onPress={() => router.push(`/want/${item.id}`)}
+                onLongPress={() => router.push(`/want/actions/${item.id}`)}
+              />
             )}
+            ItemSeparatorComponent={() => <View style={{ height: space.md }} />}
             style={styles.listView}
             contentContainerStyle={styles.list}
             ListEmptyComponent={

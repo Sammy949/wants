@@ -1,3 +1,4 @@
+import { DeleteProvider } from "@/components/delete-provider";
 import { DataProvider } from "@/data/provider";
 import { PreferencesProvider } from "@/data/preferences";
 import { ThemeProvider, useTheme } from "@/theme/theme";
@@ -37,6 +38,7 @@ function AppStack() {
         <Stack.Screen name="want/new" options={{ ...SHEET, sheetAllowedDetents: "fitToContents" }} />
         <Stack.Screen name="want/[id]" />
         <Stack.Screen name="want/edit/[id]" options={SHEET} />
+        <Stack.Screen name="want/actions/[id]" options={{ ...SHEET, sheetAllowedDetents: "fitToContents" }} />
         <Stack.Screen name="settings" />
       </Stack>
     </>
@@ -55,12 +57,14 @@ export default function RootLayout() {
   if (!loaded && !error) return null;
 
   return (
-    // Gesture Handler needs a root view for swipe actions on list rows.
+    // Gesture Handler needs a root view (Reanimated gestures, future swipes).
     <GestureHandlerRootView style={{ flex: 1 }}>
       <PreferencesProvider>
         <ThemeProvider>
           <DataProvider>
-            <AppStack />
+            <DeleteProvider>
+              <AppStack />
+            </DeleteProvider>
           </DataProvider>
         </ThemeProvider>
       </PreferencesProvider>

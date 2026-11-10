@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { AccessibilityInfo, Alert } from "react-native";
+import { AccessibilityInfo } from "react-native";
+import { useDelete } from "@/components/delete-provider";
 import { deletePhotos, savePhoto } from "@/data/photos";
 import { pendingGotStore } from "@/data/pending-store";
 import { useLiveQuery, useWantsRepo } from "@/data/provider";
@@ -12,10 +13,11 @@ import { pickPhoto, type PhotoSource } from "@/lib/pick-photo";
  * load the want, mark it as got (photo + paid), undo, want it again, delete.
  * Layouts only render; behaviour lives here.
  */
-export function useWantDetail(wantId: number, { startCelebrating = false } = {}) {
+export function useWantDetail(wantId: number, { startCelebrating = false, startChoosing = false } = {}) {
   const repo = useWantsRepo();
+  const { remove } = useDelete();
   const { data: want, error } = useLiveQuery(`want:${wantId}`, (r) => r.get(wantId));
-  const [choosing, setChoosing] = useState(false);
+  const [choosing, setChoosing] = useState(startChoosing);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   // True only right after marking as got on this screen, so the moment plays once.
@@ -94,18 +96,11 @@ export function useWantDetail(wantId: number, { startCelebrating = false } = {})
     }
   }
 
-  function confirmDelete() {
-    Alert.alert("Delete this want?", "This can't be undone.", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          deletePhotos(await repo.remove(wantId));
-          router.back();
-        },
-      },
-    ]);
+  /** Delete with Undo (shown on the list) instead of an "are you sure" alert. */
+  function deleteWant() {
+    if (!want) return;
+    remove(want.id, want.title);
+    router.back();
   }
 
   return {
@@ -120,7 +115,7 @@ export function useWantDetail(wantId: number, { startCelebrating = false } = {})
     markGot,
     undoGot,
     wantAgain,
-    confirmDelete,
+    deleteWant,
     edit: () => router.push(`/want/edit/${wantId}`),
   };
 }
