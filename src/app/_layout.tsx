@@ -1,4 +1,5 @@
 import { DataProvider } from "@/data/provider";
+import { PreferencesProvider } from "@/data/preferences";
 import { ThemeProvider, useTheme } from "@/theme/theme";
 import {
   Sora_400Regular,
@@ -52,10 +53,12 @@ export default function RootLayout() {
   if (!loaded && !error) return null;
 
   return (
-    <ThemeProvider>
-      <DataProvider>
-        <AppStack />
-      </DataProvider>
-    </ThemeProvider>
+    <PreferencesProvider>
+      <ThemeProvider>
+        <DataProvider>
+          <AppStack />
+        </DataProvider>
+      </ThemeProvider>
+    </PreferencesProvider>
   );
 }

@@ -1,6 +1,7 @@
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
+import { usePreferences } from "@/data/preferences";
 import { useWantsRepo } from "@/data/provider";
 import { PRICE_LABEL, WantValidationError, type WantKind } from "@/data/wants";
 import { parseAmount, type CurrencyCode } from "@/lib/money";
@@ -8,17 +9,20 @@ import { parseAmount, type CurrencyCode } from "@/lib/money";
 /** State and save logic for the New want flow. */
 export function useNewWantDraft({ selectionHaptic = false } = {}) {
   const repo = useWantsRepo();
+  const { currency: defaultCurrency } = usePreferences();
   const [title, setTitle] = useState("");
   const [kind, setKindRaw] = useState<WantKind>("thing");
   const [amount, setAmount] = useState("");
-  const [currency, setCurrency] = useState<CurrencyCode>("NGN");
+  const [currency, setCurrency] = useState<CurrencyCode>(defaultCurrency ?? "NGN");
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // A chosen default wins; otherwise start with the last currency used.
   useEffect(() => {
+    if (defaultCurrency) return;
     repo.lastCurrency().then((c) => c && setCurrency(c), () => {});
-  }, [repo]);
+  }, [defaultCurrency, repo]);
 
   function setKind(next: WantKind) {
     if (next !== kind && selectionHaptic) Haptics.selectionAsync().catch(() => {});

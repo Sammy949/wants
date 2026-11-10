@@ -3,6 +3,7 @@ import { ImageIcon } from "phosphor-react-native/src/icons/Image";
 import { useEffect, useState } from "react";
 import { StyleSheet, TextInput, View } from "react-native";
 import type { Price, Want } from "@/data/wants";
+import { usePreferences } from "@/data/preferences";
 import { useWantsRepo } from "@/data/provider";
 import { formatMoney, parseAmount, type CurrencyCode } from "@/lib/money";
 import type { PhotoSource } from "@/lib/pick-photo";
@@ -30,17 +31,18 @@ interface GotFlowProps {
 export function GotFlow({ want, busy, onConfirm, onCancel }: GotFlowProps) {
   const { colors } = useTheme();
   const repo = useWantsRepo();
+  const { currency: defaultCurrency } = usePreferences();
   const hasPrice = want.price !== null;
 
   const [mode, setMode] = useState<PaidMode>("full");
   const [amount, setAmount] = useState("");
-  const [currency, setCurrency] = useState<CurrencyCode>(want.price?.currency ?? "NGN");
+  const [currency, setCurrency] = useState<CurrencyCode>(want.price?.currency ?? defaultCurrency ?? "NGN");
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!hasPrice) repo.lastCurrency().then((c) => c && setCurrency(c), () => {});
-  }, [hasPrice, repo]);
+    if (!hasPrice && !defaultCurrency) repo.lastCurrency().then((c) => c && setCurrency(c), () => {});
+  }, [hasPrice, defaultCurrency, repo]);
 
   const askAmount = !hasPrice || mode === "different";
 
