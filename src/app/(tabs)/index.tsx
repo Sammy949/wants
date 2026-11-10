@@ -1,15 +1,17 @@
 import { router } from "expo-router";
 import { PlusIcon } from "phosphor-react-native/src/icons/Plus";
 import { useState } from "react";
-import { FlatList, Pressable, StyleSheet, View } from "react-native";
+import { AccessibilityInfo, FlatList, Pressable, StyleSheet, View } from "react-native";
 import { Button } from "@/components/button";
 import { EmptyState } from "@/components/empty-state";
 import { EmptyWantsArt } from "@/components/illustrations";
 import { Screen } from "@/components/screen";
 import { TabHeader } from "@/components/tab-header";
+import { SwipeToDelete } from "@/components/swipe-to-delete";
 import { TagCard } from "@/components/tag-card";
 import { Text } from "@/components/text";
-import { useLiveQuery } from "@/data/provider";
+import { deletePhotos } from "@/data/photos";
+import { useLiveQuery, useWantsRepo } from "@/data/provider";
 import { useRecoverPendingGot } from "@/data/use-recover-pending-got";
 import type { WantKind } from "@/data/wants";
 import { useTheme } from "@/theme/theme";
@@ -26,6 +28,7 @@ export default function WantsScreen() {
   // First screen after launch: finish any got that Android interrupted.
   useRecoverPendingGot();
   const { colors } = useTheme();
+  const repo = useWantsRepo();
   const [filter, setFilter] = useState<WantKind | "all">("all");
   const wants = useLiveQuery("wanting", (repo) => repo.listWanting());
 
@@ -66,7 +69,17 @@ export default function WantsScreen() {
           <FlatList
             data={list}
             keyExtractor={(w) => String(w.id)}
-            renderItem={({ item }) => <TagCard want={item} onPress={() => router.push(`/want/${item.id}`)} />}
+            renderItem={({ item }) => (
+              <SwipeToDelete
+                label={item.title}
+                onDelete={async () => {
+                  deletePhotos(await repo.remove(item.id));
+                  AccessibilityInfo.announceForAccessibility(`Deleted ${item.title}.`);
+                }}
+              >
+                <TagCard want={item} onPress={() => router.push(`/want/${item.id}`)} />
+              </SwipeToDelete>
+            )}
             ItemSeparatorComponent={() => <View style={{ height: space.md }} />}
             style={styles.listView}
             contentContainerStyle={styles.list}

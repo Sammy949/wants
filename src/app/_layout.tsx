@@ -12,6 +12,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -54,12 +55,15 @@ export default function RootLayout() {
   if (!loaded && !error) return null;
 
   return (
-    <PreferencesProvider>
-      <ThemeProvider>
-        <DataProvider>
-          <AppStack />
-        </DataProvider>
-      </ThemeProvider>
-    </PreferencesProvider>
+    // Gesture Handler needs a root view for swipe actions on list rows.
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <PreferencesProvider>
+        <ThemeProvider>
+          <DataProvider>
+            <AppStack />
+          </DataProvider>
+        </ThemeProvider>
+      </PreferencesProvider>
+    </GestureHandlerRootView>
   );
 }
